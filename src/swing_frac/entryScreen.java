@@ -8,9 +8,9 @@ public class entryScreen extends JPanel{
 	private JTextField t1 = new JTextField();
 	private JLabel l1 = new JLabel("닉네임");
 	private JButton b1 = new JButton("go");
-	private Font f1 = new Font("Consolas 굵게", Font.BOLD, 20);
-	private Font f2 = new Font("Consolas 굵게", Font.BOLD, 10);
 	public String nickname;
+	public objectSettings objset = new objectSettings();
+
 	//Image img = new ImageIcon(entryScreen.class.getResource("../images/entry.png")).getImage();
 	
 	public entryScreen() {
@@ -23,6 +23,7 @@ public class entryScreen extends JPanel{
 		eventSet();
 	}
 	public void componentSet() {
+		Font f1 = objset.getFont1();
 		t1.setBounds(75, 110, 150, 30);
 		l1.setBounds(120, 65, 150, 30);
 		b1.setBounds(240, 110, 50, 30);

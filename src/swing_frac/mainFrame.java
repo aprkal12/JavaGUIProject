@@ -13,6 +13,7 @@ import javax.swing.*;
 // ㅁ  ㅁ
 // 이렇게 만들고, 이동불가능 반경 설정해서 따로 클래스화 함
 // moveTomap생성되고, 이벤트리스너부분 변경됌
+// + 맵별 라벨추가
 
 // 22.11.02
 // 캐릭터의 이동 불가능한 영역 지정 
@@ -29,6 +30,7 @@ import javax.swing.*;
 public class mainFrame extends JFrame{
 	Container cPane = getContentPane();
 	moveToMap mControl = new moveToMap();
+	static objectSettings objtest = new objectSettings();
 	static int Width = 800, Height = 600;
 	static map mapP[] = new map[7];
 	static player player = new player();
@@ -78,14 +80,29 @@ public class mainFrame extends JFrame{
 		mapP[3].add(t3);
 		mapP[3].add(t1);
 		mapP[3].add(t2);
-		JLabel la = new JLabel();
-		la.setBounds(350, 20, 100, 100);
-		la.setBackground(Color.BLACK);
-		la.setText("디정 중앙");
-		la.setFont(new Font("Consolas 굵게", Font.BOLD, 20));
+		
+		labelSet[] la = new labelSet[7];
+		for(int i = 0; i<7; i++){
+			la[i] = new labelSet();
+		}
+		la[0].setText("102, 101 복도");
+		la[1].setText("디정 후문");
+		la[2].setText("연구실들");
+		la[3].setText("디정 중앙");
+		la[4].setText("디셈 복도");
+		la[5].setText("디정 정문");
+		la[6].setText("116 복도");
+
+		
 		// 22.11.11
 		// 맵별 라벨, 폰트 따로 모듈화 필요해보임
-		mapP[3].add(la);
+
+		// 22.11.13
+		// 라벨 이름 설정하는거 따로 함수 필요해보임
+		for(int i = 0; i<7; i++){
+			mapP[i].add(la[i]);
+		}
+
 
 		//mapP[3].setBackground(Color.BLUE);
 		mapP[1].setBackground(Color.WHITE);
@@ -158,7 +175,6 @@ public class mainFrame extends JFrame{
 					if(mControl.CanIGoBottomMap(cur, player.getY())){
 						mControl.MoveToBottomMap();
 						topbottom(mControl.getTarget());
-
 					}
 					else if(player.getY() != 500){
 						player.setLocation(player.getX(), player.getY()+10);
