@@ -64,12 +64,8 @@ public class mainFrame extends JFrame{
 	public void Setpanel() {
 		for(int i = 0; i<7; i++) {
 			mapP[i] = new map();
-			//p1[i].setBounds(0, 0, Width, Height);
-			//p1[i].setLayout(null);
-			//add(p1[i]);
 		}
 		//cPane.add(startP);
-		//add(startP);
 
 		System.out.println(startP.a);
 		cPane.add(mapP[3]);
