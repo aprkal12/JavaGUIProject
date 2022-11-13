@@ -39,8 +39,7 @@ public class mainFrame extends JFrame{
 	static map1Object2 t2 = new map1Object2();
 	static entryFrame startP = new entryFrame();
 	static int cur = 3;
-	static int maxOfIndex = 6;
-	static int minOfIndex = 0;
+
 	// 부드러운 캐릭터 이동을 위한 변수선언
 	static boolean upP = false;
 	static boolean downP = false;
