@@ -70,10 +70,10 @@ public class mainFrame extends JFrame{
 		}
 		//cPane.add(startP);
 		//add(startP);
-		//startP.;
+
 		System.out.println(startP.a);
 		cPane.add(mapP[3]);
-		//add(mapP[3]);
+
 		
 		mapP[3].add(player);
 		
