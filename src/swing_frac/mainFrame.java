@@ -6,6 +6,10 @@ import javax.swing.*;
 
 // 캐릭터 객체 => 하나의 패널로 해서 이미지 씌워야할듯
 
+// 22.11.14 update
+// 기본 라벨에 관한 세팅은 다시 objectsettings로 넘김
+// 맵 자체에 라벨 세팅 만듦, 텍스트만 바꿀 수 있도록 설정
+
 // 22.11.13 update
 // 맵
 // ㅁ  ㅁ
@@ -76,35 +80,34 @@ public class mainFrame extends JFrame{
 		mapP[3].add(t1);
 		mapP[3].add(t2);
 		
-		labelSet[] la = new labelSet[7];
-		for(int i = 0; i<7; i++){
-			la[i] = new labelSet();
-		}
-		la[0].setText("102, 101 복도");
-		la[1].setText("디정 후문");
-		la[2].setText("연구실들");
-		la[3].setText("디정 중앙");
-		la[4].setText("디셈 복도");
-		la[5].setText("디정 정문");
-		la[6].setText("116 복도");
+		//labelSet[] la = new labelSet[7];
+		//for(int i = 0; i<7; i++){
+		//	la[i] = new labelSet();
+		//}
+		mapP[0].setLabeltext("102, 101 복도");
+		mapP[1].setLabeltext("디정 후문");
+		mapP[2].setLabeltext("연구실들");
+		mapP[3].setLabeltext("디정 중앙");
+		mapP[4].setLabeltext("디셈 복도");
+		mapP[5].setLabeltext("디정 정문");
+		mapP[6].setLabeltext("116 복도");
 
-		
 		// 22.11.11
 		// 맵별 라벨, 폰트 따로 모듈화 필요해보임
 
 		// 22.11.13
 		// 라벨 이름 설정하는거 따로 함수 필요해보임
-		for(int i = 0; i<7; i++){
-			mapP[i].add(la[i]);
-		}
 
+		// 22.11.14
+		// 그냥 맵 클래스에 라벨을 자체적으로 포함시킴
+		// 라벨 함수는 컴포넌트세팅쪽으로 넘겨야겠음
 
 		//mapP[3].setBackground(Color.BLUE);
 		mapP[1].setBackground(Color.WHITE);
 		mapP[2].setBackground(Color.GREEN);
 		mapP[0].setBackground(Color.YELLOW);
 		mapP[4].setBackground(Color.ORANGE);
-		//la.setText("후문 로비");
+
 		//mapP[1].add(la);
 		//mapP[0].add(("102, 101강의실 복도"));
 		//mapP[3].add(("정문 로비, U&I"));
