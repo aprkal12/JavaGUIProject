@@ -12,6 +12,7 @@ public class map extends JPanel{
 		la.setFont(f1);
 		la.setBounds(320, 20, 300, 100);
 		la.setBackground(Color.BLACK);
+		//la.setOpaque(true);
 		setBounds(0, 0, Width, Height);
 		setLayout(null);
 		add(la);

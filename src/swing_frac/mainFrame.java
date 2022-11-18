@@ -4,6 +4,18 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
+// 22.11.18
+// 쓰레드를 여기서 만들고 러너블도 여기서 만들어야할것 같다.
+// 이벤트 리스너는 포커스 옮겨서 가능하니 그걸 활용하자
+// setfocusable과 request포커스로 여러개의 이벤트리스너 구현가능한거 확인
+// 구현 목표 :
+// entryframe + entryScreen을 Thread1으로,
+// mainFrame을 Thread2 로 해서
+// Thread1이 끝나고 nickname설정이 완료되면 Thread2 실행시키기
+// 현재 닉네임 추출 흐름까지는 성공
+// ----- 성공, 플레이어 프레임 사이즈랑 라벨 사이즈 조절, 맵 넘어가는 x,y좌표 수정해주면 됌
+// 클래스도 분리해서 정리하자
+
 // 캐릭터 객체 => 하나의 패널로 해서 이미지 씌워야할듯
 
 // 22.11.14 update
@@ -32,27 +44,55 @@ import javax.swing.*;
 // 맵을 그냥 하나의 프레임으로 바꿔야하나
 
 public class mainFrame extends JFrame{
-	Container cPane = getContentPane();
-	moveToMap mControl = new moveToMap();
-	static objectSettings objtest = new objectSettings();
-	static int Width = 800, Height = 600;
-	static map mapP[] = new map[7];
-	static player player = new player();
-	static map1Object3 t3 = new map1Object3();
-	static map1Object1 t1 = new map1Object1();
-	static map1Object2 t2 = new map1Object2();
-	static entryFrame startP = new entryFrame();
-	static int cur = 3;
-
-	// 부드러운 캐릭터 이동을 위한 변수선언
+	static final int Width = 800, Height = 600;
 	static boolean upP = false;
 	static boolean downP = false;
 	static boolean leftP = false;
 	static boolean rightP = false;
+	private Container cPane;
+	private moveToMap mControl;
+
+	private objectSettings objtest;
+	private map mapP[];
+	public player player;
+	//static map1Object3 t3 = new map1Object3();
+	//static map1Object1 t1 = new map1Object1();
+	//static map1Object2 t2 = new map1Object2();
+	private entryFrame startP;
+	private Thread th1;
+	private Thread th2;
+	static int cur = 3;
+
+	// 부드러운 캐릭터 이동을 위한 변수선언
 	public mainFrame() {
+		cPane = getContentPane();
+		mControl = new moveToMap();
+		objtest = new objectSettings();
+		mapP = new map[7];
+		player = new player();
+		startP = new entryFrame();
 		Setframe();
 		Setpanel();
-		Eventset();
+		entryEventset();
+		testrunna runna = new testrunna();
+		th1 = new Thread(runna);
+		th1.start();
+		try{
+			th1.join();
+		}catch(InterruptedException e){
+			System.out.println("조인 끝");
+		}
+		startP.setVisible(false);
+		cPane.remove(startP);
+		cPane.add(mapP[3]);
+		JLabel l1 = new JLabel();
+		l1.setFont(new Font("Consolas 굵게", Font.BOLD, 15));
+		l1.setBounds(0, 0, 200, 20);
+		l1.setBackground(Color.BLACK);
+		l1.setText(startP.setNickname.nickname);
+		System.out.println(l1.getText());
+		player.add(l1);
+		mapEventset();
 	}
 	public void Setframe() {
 		setTitle("test1");
@@ -68,17 +108,15 @@ public class mainFrame extends JFrame{
 		for(int i = 0; i<7; i++) {
 			mapP[i] = new map();
 		}
-		//cPane.add(startP);
+		cPane.add(startP);
+		System.out.println(startP.setNickname.nickname);
+		//cPane.add(mapP[3]);
 
-		System.out.println(startP.a);
-		cPane.add(mapP[3]);
-
-		
 		mapP[3].add(player);
-		
-		mapP[3].add(t3);
-		mapP[3].add(t1);
-		mapP[3].add(t2);
+		// 오브젝트 추가 테스트
+		//mapP[3].add(t3);
+		//mapP[3].add(t1);
+		//mapP[3].add(t2);
 		
 		//labelSet[] la = new labelSet[7];
 		//for(int i = 0; i<7; i++){
@@ -107,11 +145,6 @@ public class mainFrame extends JFrame{
 		mapP[2].setBackground(Color.GREEN);
 		mapP[0].setBackground(Color.YELLOW);
 		mapP[4].setBackground(Color.ORANGE);
-
-		//mapP[1].add(la);
-		//mapP[0].add(("102, 101강의실 복도"));
-		//mapP[3].add(("정문 로비, U&I"));
-		//mapP[4].add(("116로비"));
 		
 		mapP[3].setVisible(true);
 	}
@@ -125,6 +158,8 @@ public class mainFrame extends JFrame{
 		player.setLocation(740-player.getX(), player.getY()); // 이동 시 캐릭터 위치
 		mapP[cur].add(player); // 캐릭터 맵 이동시키기
 		System.out.println("current map : " + cur);
+		player.setFocusable(true); // 맵을 이동시키면 그 패널에서의 포커서블이 풀리기때문에
+		player.requestFocus(); // 다시 설정해줘야함
 	}
 	public void topbottom(int target){
 		mapP[cur].setVisible(false); // 이동 전 맵 안보이게
@@ -135,9 +170,13 @@ public class mainFrame extends JFrame{
 		player.setLocation(player.getX(), 500 - player.getY()); // 이동 시 캐릭터 위치
 		mapP[cur].add(player); // 캐릭터 맵 이동시키기
 		System.out.println("current map : " + cur);
+		player.setFocusable(true);
+		player.requestFocus();
 	}
-	public void Eventset() {
-		addKeyListener(new KeyAdapter() {
+	public void mapEventset(){
+		player.setFocusable(true);
+		player.requestFocus();
+		player.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) { //키 눌렀을때
 				// TODO Auto-generated method stub
@@ -158,7 +197,7 @@ public class mainFrame extends JFrame{
 					default:
 						break;
 				}
-				if (upP) { 
+				if (upP) {
 					if(!(player.getX() < 100 && player.getY() < 110)) {
 						if(mControl.CanIGoTopMap(cur, player.getY())){
 							mControl.MoveToTopMap();
@@ -168,7 +207,7 @@ public class mainFrame extends JFrame{
 							player.setLocation(player.getX(), player.getY()-10);
 						}
 					}
-				} 
+				}
 				if (downP) {
 					if(mControl.CanIGoBottomMap(cur, player.getY())){
 						mControl.MoveToBottomMap();
@@ -177,7 +216,7 @@ public class mainFrame extends JFrame{
 					else if(player.getY() != 500){
 						player.setLocation(player.getX(), player.getY()+10);
 					}
-				} 
+				}
 				if (leftP) {
 					if(!(player.getX() < 110 && player.getY() < 100)) {
 						if(mControl.CanIGoLeftMap(cur, player.getX())) {
@@ -189,7 +228,7 @@ public class mainFrame extends JFrame{
 							player.setLocation(player.getX()-10, player.getY());
 						}
 					}
-				} 
+				}
 				if (rightP) {
 					if(mControl.CanIGoRightMap(cur, player.getX())) {
 						mControl.MoveToRightMap();
@@ -199,7 +238,7 @@ public class mainFrame extends JFrame{
 						player.setLocation(player.getX()+10, player.getY());
 					}
 				}
-				System.out.println("X : " + player.getX() + " Y : " + player.getY());
+				System.out.println("keypressed X : " + player.getX() + " Y : " + player.getY());
 			}
 			@Override
 			public void keyReleased(KeyEvent e) {
@@ -207,20 +246,59 @@ public class mainFrame extends JFrame{
 				if(e.getKeyCode()==KeyEvent.VK_UP) {
 					upP = false;
 				}
-				else if (e.getKeyCode() == KeyEvent.VK_DOWN) { 
-				    downP = false; 
-				} 
-				else if (e.getKeyCode() == KeyEvent.VK_LEFT) { 
-				    leftP = false; 
-				} 
-				else if (e.getKeyCode() == KeyEvent.VK_RIGHT) { 
-				    rightP = false; 
-				} 
+				else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+					downP = false;
+				}
+				else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+					leftP = false;
+				}
+				else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+					rightP = false;
+				}
 			}
 		});
 		System.out.println(cur);
+	}
+	public void entryEventset() {
+		startP.setNickname.t1.addKeyListener(new KeyAdapter(){
+			// 22.11.18 여기서 만들어서 쓰레드 돌려보자 여기서 리스너 둘 다 만들고
+			// 쓰레드 끝나면 포커스를 넘기는 식으로 하면 될듯요~
+			// 잘 된다 나이스
+			// 클래스 정리좀 하자 ㅋㅋㅋㅋㅋ
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if(e.getKeyCode() == KeyEvent.VK_ENTER) {
+					//th1.interrupt();
+					startP.setNickname.nickname = startP.setNickname.t1.getText();
+					System.out.println(startP.setNickname.nickname);
+					th1.interrupt();
+					//JOptionPane.showMessageDialog(null, startP.setNickname.nickname);
+				}
+			}
+		});
+
+	}
+	class testrunna implements Runnable{
+		private JLabel l1;
+		public testrunna(){
+			objectSettings objset = new objectSettings();
+			l1 = objset.getLabel();
+		}
+		public void run(){
+			while(true){
+				try{
+					Thread.sleep(500);
+					System.out.println("쓰레드 테스트 중 nickname = " + startP.setNickname.nickname);
+					l1.setText(startP.setNickname.nickname);
+				}catch(InterruptedException e){
+					System.out.println("thread1 끝");
+					return;
+				}
+			}
+		}
 	}
 	public static void main(String[] args) {
 		new mainFrame();
 	}
 }
+
