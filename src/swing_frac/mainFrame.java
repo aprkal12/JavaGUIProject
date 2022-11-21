@@ -2,7 +2,12 @@ package swing_frac;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.net.*;
+import java.io.*;
+import java.util.Scanner;
 import javax.swing.*;
+// 22.11.21
+// 서버구현, 멀티실행 intellij 설정(구글링 참고)
 
 // 22.11.18
 // 쓰레드를 여기서 만들고 러너블도 여기서 만들어야할것 같다.
@@ -44,7 +49,7 @@ import javax.swing.*;
 // 맵을 그냥 하나의 프레임으로 바꿔야하나
 
 public class mainFrame extends JFrame{
-	static final int Width = 800, Height = 600;
+	static final int WIDTH = 800, HEIGHT = 600;
 	static boolean upP = false;
 	static boolean downP = false;
 	static boolean leftP = false;
@@ -61,13 +66,17 @@ public class mainFrame extends JFrame{
 	private entryFrame entryP;
 	private entryScreen setNicknameP;
 	private JTextField tField;
-	private String userName;
+	public static String userName;
 	private Thread th1;
 	private Thread th2;
 	static int curMap = 3;
 
 	// 부드러운 캐릭터 이동을 위한 변수선언
 	public mainFrame() {
+		Socket socket = null;
+		BufferedReader in = null;
+
+		// GUI 부분 초기화
 		cPane = getContentPane();
 		mControl = new moveToMap(curMap);
 		objTest = new objectSettings();
@@ -80,6 +89,8 @@ public class mainFrame extends JFrame{
 		setFrame();
 		setPanel();
 		entryEventSet();
+
+		// 실행 제어
 		entryThread runna = new entryThread();
 		th1 = new Thread(runna);
 		th1.start();
@@ -87,21 +98,58 @@ public class mainFrame extends JFrame{
 			th1.join();
 		}catch(InterruptedException e){
 			System.out.println("조인 끝");
+			// 아마 닉네임을 입력 받은 후인 여기서 서버 실행 시켜야 겠지?
 		}
 		// 닉네임 입력 후 화면 제거
 		entryP.setVisible(false);
 		cPane.remove(entryP);
 
-		// 맵 패널로 변경
+		// 맵 패널로 변경, 채팅창 추가
+		setSize(1100, 600);
+		JPanel chat = new JPanel();
+		chat.setBounds(800, 0, 300,600);
+		chat.setBackground(Color.BLACK);
+		setVisible(true);
+		cPane.add(chat);
+
 		cPane.add(mapP[3]);
 		player.setPlayerNickname(userName);
 		//player.add(userLabel);
 		mapEventSet();
+
+		try{
+			socket = new Socket("localhost", 7999);
+			System.out.println("[서버와 연결되었습니다.]");
+
+			userThread userThread = new userThread(socket, userName);
+			userThread.start();
+
+			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			while(in != null){
+				String inputMsg = in.readLine();
+				if(("["+userName+"]님이 나가셨습니다.").equals(inputMsg)){
+					break;
+				}
+				Thread.sleep(1000);
+				System.out.println("From : " + inputMsg);
+			}
+		}catch (IOException i){
+			System.out.println("서버와 접속이 끊어졌습니다.");
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		} finally {
+			try{
+				socket.close();
+			}catch (IOException j){
+				j.printStackTrace();
+			}
+		}
+		System.out.println("서버 연결종료");
 	}
 	public void setFrame() {
 		// 메인 프레임 초기화
 		setTitle("test1");
-		setSize(Width, Height);
+		setSize(WIDTH, HEIGHT);
 		
 		setResizable(false);
 		setLocationRelativeTo(null);
@@ -300,4 +348,32 @@ public class mainFrame extends JFrame{
 		new mainFrame();
 	}
 }
+class userThread extends Thread{
+	Socket socket = null;
+	String name;
+	Scanner scanner = new Scanner(System.in);
 
+	public userThread(Socket socket, String name){
+		this.socket = socket;
+		this.name = name;
+	}
+	@Override
+	public void run(){
+		try{
+			PrintStream out = new PrintStream(socket.getOutputStream());
+			out.println(name);
+			out.flush();
+			while(true){
+				String outputMsg = scanner.nextLine();
+				out.println(outputMsg);
+				out.flush();
+				if("종료".equals(outputMsg)){
+					break;
+				}
+			}
+		}catch (IOException e){
+			e.printStackTrace();
+		}
+	}
+
+}
