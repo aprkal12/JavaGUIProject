@@ -6,11 +6,11 @@ import java.awt.event.*;
 
 
 public class entryScreen extends JPanel{
-	public JTextField t1 = new JTextField();
-	private JLabel l1 = new JLabel("닉네임");
-	private JButton b1 = new JButton("go");
-	public String nickname="";
-	public objectSettings objset = new objectSettings();
+	public JTextField textField = new JTextField();
+	private JLabel label = new JLabel("닉네임");
+	private JButton button  = new JButton("go");
+	private String nickname="";
+	public objectSettings objSet = new objectSettings();
 	//public Thread th1;
 	//Image img = new ImageIcon(entryScreen.class.getResource("../images/entry.png")).getImage();
 	
@@ -24,32 +24,18 @@ public class entryScreen extends JPanel{
 		//eventSet();
 	}
 	public void componentSet() {
-		Font f1 = objset.getFont1();
-		t1.setBounds(75, 110, 150, 30);
-		l1.setBounds(120, 65, 150, 30);
-		//b1.setBounds(240, 110, 50, 30);
-		t1.setFont(f1);
-		l1.setFont(f1);
-		add(t1);
-		add(l1);
-		//add(b1);
-	}
-	public void eventSet() {
-		//t1.addKeyListener(new KeyAdapter(){
-		//	@Override
-		//	public void keyPressed(KeyEvent e) {
-		//		if(e.getKeyCode() == KeyEvent.VK_ENTER) {
-		//			//th1.interrupt();
-		//			nickname = t1.getText();
-		//			JOptionPane.showMessageDialog(null, nickname);
-		//		}
-		//	}
-		//});
+		Font font1 = objSet.getFont1();
+		textField.setBounds(75, 110, 150, 30);
+		label.setBounds(120, 65, 150, 30);
+		//button.setBounds(240, 110, 50, 30);
+		textField.setFont(font1);
+		label.setFont(font1);
+		add(textField);
+		add(label);
+		//add(button);
 	}
 	public String getNickname() {
-		return nickname;
+		return this.nickname;
 	}
-	public static void main(String[] args) {
-		new entryScreen();
-	}
+	public JTextField getTextField() { return this.textField;}
 }

@@ -52,29 +52,35 @@ public class mainFrame extends JFrame{
 	private Container cPane;
 	private moveToMap mControl;
 
-	private objectSettings objtest;
+	private objectSettings objTest;
 	private map mapP[];
-	public player player;
+	private player player;
 	//static map1Object3 t3 = new map1Object3();
-	//static map1Object1 t1 = new map1Object1();
+	//statictField = new map1Object1();
 	//static map1Object2 t2 = new map1Object2();
-	private entryFrame startP;
+	private entryFrame entryP;
+	private entryScreen setNicknameP;
+	private JTextField tField;
+	private String userName;
 	private Thread th1;
 	private Thread th2;
-	static int cur = 3;
+	static int curMap = 3;
 
 	// 부드러운 캐릭터 이동을 위한 변수선언
 	public mainFrame() {
 		cPane = getContentPane();
-		mControl = new moveToMap();
-		objtest = new objectSettings();
+		mControl = new moveToMap(curMap);
+		objTest = new objectSettings();
 		mapP = new map[7];
 		player = new player();
-		startP = new entryFrame();
-		Setframe();
-		Setpanel();
-		entryEventset();
-		testrunna runna = new testrunna();
+		entryP = new entryFrame();
+		setNicknameP = new entryScreen();
+		tField = setNicknameP.getTextField();
+		userName = setNicknameP.getNickname();
+		setFrame();
+		setPanel();
+		entryEventSet();
+		entryThread runna = new entryThread();
 		th1 = new Thread(runna);
 		th1.start();
 		try{
@@ -82,19 +88,18 @@ public class mainFrame extends JFrame{
 		}catch(InterruptedException e){
 			System.out.println("조인 끝");
 		}
-		startP.setVisible(false);
-		cPane.remove(startP);
+		// 닉네임 입력 후 화면 제거
+		entryP.setVisible(false);
+		cPane.remove(entryP);
+
+		// 맵 패널로 변경
 		cPane.add(mapP[3]);
-		JLabel l1 = new JLabel();
-		l1.setFont(new Font("Consolas 굵게", Font.BOLD, 15));
-		l1.setBounds(0, 0, 200, 20);
-		l1.setBackground(Color.BLACK);
-		l1.setText(startP.setNickname.nickname);
-		System.out.println(l1.getText());
-		player.add(l1);
-		mapEventset();
+		player.setPlayerNickname(userName);
+		//player.add(userLabel);
+		mapEventSet();
 	}
-	public void Setframe() {
+	public void setFrame() {
+		// 메인 프레임 초기화
 		setTitle("test1");
 		setSize(Width, Height);
 		
@@ -104,24 +109,21 @@ public class mainFrame extends JFrame{
 		setVisible(true);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	}
-	public void Setpanel() {
+	public void setPanel() {
 		for(int i = 0; i<7; i++) {
 			mapP[i] = new map();
 		}
-		cPane.add(startP);
-		System.out.println(startP.setNickname.nickname);
+		entryP.add(setNicknameP);
+		cPane.add(entryP);
+		System.out.println("초기 유저네임 : " + userName);
 		//cPane.add(mapP[3]);
 
 		mapP[3].add(player);
 		// 오브젝트 추가 테스트
 		//mapP[3].add(t3);
-		//mapP[3].add(t1);
+		//tField);
 		//mapP[3].add(t2);
-		
-		//labelSet[] la = new labelSet[7];
-		//for(int i = 0; i<7; i++){
-		//	la[i] = new labelSet();
-		//}
+
 		mapP[0].setLabeltext("102, 101 복도");
 		mapP[1].setLabeltext("디정 후문");
 		mapP[2].setLabeltext("연구실들");
@@ -148,32 +150,32 @@ public class mainFrame extends JFrame{
 		
 		mapP[3].setVisible(true);
 	}
-	public void leftright(int target){
+	public void moveLeftOrRightMap(int target){
 
-		mapP[cur].setVisible(false); // 이동 전 맵 안보이게
-		cPane.remove(mapP[cur]); // 이동 전 맵 삭제
-		cur = target;
-		cPane.add(mapP[cur]); // 이동하려는 맵 추가
-		mapP[cur].setVisible(true); // 이동하려는 맵 보이게
+		mapP[curMap].setVisible(false); // 이동 전 맵 안보이게
+		cPane.remove(mapP[curMap]); // 이동 전 맵 삭제
+		curMap = target;
+		cPane.add(mapP[curMap]); // 이동하려는 맵 추가
+		mapP[curMap].setVisible(true); // 이동하려는 맵 보이게
 		player.setLocation(740-player.getX(), player.getY()); // 이동 시 캐릭터 위치
-		mapP[cur].add(player); // 캐릭터 맵 이동시키기
-		System.out.println("current map : " + cur);
+		mapP[curMap].add(player); // 캐릭터 맵 이동시키기
+		System.out.println("current map : " + curMap);
 		player.setFocusable(true); // 맵을 이동시키면 그 패널에서의 포커서블이 풀리기때문에
 		player.requestFocus(); // 다시 설정해줘야함
 	}
-	public void topbottom(int target){
-		mapP[cur].setVisible(false); // 이동 전 맵 안보이게
-		cPane.remove(mapP[cur]); // 이동 전 맵 삭제
-		cur = target;
-		cPane.add(mapP[cur]); // 이동하려는 맵 추가
-		mapP[cur].setVisible(true); // 이동하려는 맵 보이게
+	public void moveTopOrBottomMap(int target){
+		mapP[curMap].setVisible(false); // 이동 전 맵 안보이게
+		cPane.remove(mapP[curMap]); // 이동 전 맵 삭제
+		curMap = target;
+		cPane.add(mapP[curMap]); // 이동하려는 맵 추가
+		mapP[curMap].setVisible(true); // 이동하려는 맵 보이게
 		player.setLocation(player.getX(), 500 - player.getY()); // 이동 시 캐릭터 위치
-		mapP[cur].add(player); // 캐릭터 맵 이동시키기
-		System.out.println("current map : " + cur);
+		mapP[curMap].add(player); // 캐릭터 맵 이동시키기
+		System.out.println("current map : " + curMap);
 		player.setFocusable(true);
 		player.requestFocus();
 	}
-	public void mapEventset(){
+	public void mapEventSet(){
 		player.setFocusable(true);
 		player.requestFocus();
 		player.addKeyListener(new KeyAdapter() {
@@ -198,41 +200,38 @@ public class mainFrame extends JFrame{
 						break;
 				}
 				if (upP) {
-					if(!(player.getX() < 100 && player.getY() < 110)) {
-						if(mControl.CanIGoTopMap(cur, player.getY())){
-							mControl.MoveToTopMap();
-							topbottom(mControl.getTarget());
-						}
-						else if(player.getY() != 0){
-							player.setLocation(player.getX(), player.getY()-10);
-						}
+					//if(!(player.getX() < 100 && player.getY() < 110)) { } -> 특정 좌표 이동불가 테스트
+					if(mControl.CanIGoTopMap(curMap, player.getY())){ // 위쪽 맵으로 이동가능한지 판단
+						mControl.MoveToTopMap(); // 현재 위치를 기준으로 어느 위쪽 맵으로 갈건지 판단
+						moveTopOrBottomMap(mControl.getTarget()); // 이동할 맵의 인덱스로 맵 이동
+					}
+					else if(player.getY() != 0){
+						player.setLocation(player.getX(), player.getY()-10);
 					}
 				}
 				if (downP) {
-					if(mControl.CanIGoBottomMap(cur, player.getY())){
+					if(mControl.CanIGoBottomMap(curMap, player.getY())){
 						mControl.MoveToBottomMap();
-						topbottom(mControl.getTarget());
+						moveTopOrBottomMap(mControl.getTarget());
 					}
 					else if(player.getY() != 500){
 						player.setLocation(player.getX(), player.getY()+10);
 					}
 				}
 				if (leftP) {
-					if(!(player.getX() < 110 && player.getY() < 100)) {
-						if(mControl.CanIGoLeftMap(cur, player.getX())) {
-							mControl.MoveToLeftMap();
-							leftright(mControl.getTarget());
-						}
-						// out of index 방지
-						else if(player.getX() != 0) {
-							player.setLocation(player.getX()-10, player.getY());
-						}
+					//if(!(player.getX() < 110 && player.getY() < 100)) { } -> 특정 좌표 이동불가 테스트
+					if(mControl.CanIGoLeftMap(curMap, player.getX())) {
+						mControl.MoveToLeftMap();
+						moveLeftOrRightMap(mControl.getTarget());
+					}
+					else if(player.getX() != 0) {
+						player.setLocation(player.getX()-10, player.getY());
 					}
 				}
 				if (rightP) {
-					if(mControl.CanIGoRightMap(cur, player.getX())) {
+					if(mControl.CanIGoRightMap(curMap, player.getX())) {
 						mControl.MoveToRightMap();
-						leftright(mControl.getTarget());
+						moveLeftOrRightMap(mControl.getTarget());
 					}
 					else if(player.getX() != 740) {
 						player.setLocation(player.getX()+10, player.getY());
@@ -257,10 +256,10 @@ public class mainFrame extends JFrame{
 				}
 			}
 		});
-		System.out.println(cur);
+		System.out.println(curMap);
 	}
-	public void entryEventset() {
-		startP.setNickname.t1.addKeyListener(new KeyAdapter(){
+	public void entryEventSet() {
+		tField.addKeyListener(new KeyAdapter(){
 			// 22.11.18 여기서 만들어서 쓰레드 돌려보자 여기서 리스너 둘 다 만들고
 			// 쓰레드 끝나면 포커스를 넘기는 식으로 하면 될듯요~
 			// 잘 된다 나이스
@@ -269,27 +268,27 @@ public class mainFrame extends JFrame{
 			public void keyPressed(KeyEvent e) {
 				if(e.getKeyCode() == KeyEvent.VK_ENTER) {
 					//th1.interrupt();
-					startP.setNickname.nickname = startP.setNickname.t1.getText();
-					System.out.println(startP.setNickname.nickname);
+					userName = tField.getText();
+					System.out.println(userName);
 					th1.interrupt();
-					//JOptionPane.showMessageDialog(null, startP.setNickname.nickname);
+					//JOptionPane.showMessageDialog(null, userName);
 				}
 			}
 		});
 
 	}
-	class testrunna implements Runnable{
-		private JLabel l1;
-		public testrunna(){
-			objectSettings objset = new objectSettings();
-			l1 = objset.getLabel();
+	class entryThread implements Runnable{
+		private JLabel userLabel;
+		public entryThread(){
+			objectSettings objSet = new objectSettings();
+			userLabel = objSet.getLabel();
 		}
 		public void run(){
 			while(true){
 				try{
-					Thread.sleep(500);
-					System.out.println("쓰레드 테스트 중 nickname = " + startP.setNickname.nickname);
-					l1.setText(startP.setNickname.nickname);
+					Thread.sleep(1000);
+					System.out.println("userName = " + userName);
+					userLabel.setText(userName);
 				}catch(InterruptedException e){
 					System.out.println("thread1 끝");
 					return;
