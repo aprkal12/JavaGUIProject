@@ -6,6 +6,23 @@ import java.net.*;
 import java.io.*;
 import java.util.Scanner;
 import javax.swing.*;
+// 22.11.23
+// mainFrame이 client고 ServerAdmin이 server인 상황임
+// 일단 클라이언트가 접속할 때마다 서버에 캐릭터 추가까지는 했다..
+// 해결해야할 문제
+// 문제는 각 클라이언트들도 추가된 캐릭터들이 보여야 한다는 점
+// 그리고 각 추가된 캐릭터들도 각각 이벤트리스너를 적용시켜줘야하고,
+// 또 방향 이동하면 그것도 서버-클라이언트 전부 실시간 반영되어야 한다.
+
+// 생각해본 방법
+// 서버에 추가될 때마다 닉네임 정보를 클라이언트로 쏴줘서 그걸 받은 클라이언트가
+// 본인의 맵에 다른 유저의 캐릭터를 추가하고 다시 그린다.
+// 캐릭터는 또 이동해야하니까 이동해서 캐릭터 위치가 바뀔 때마다 다시 위치반영해서
+// 각각 클라이언트마다 다시 그려야함
+
+// 생각해본 구현방식
+//
+
 // 22.11.21
 // 서버구현, 멀티실행 intellij 설정(구글링 참고)
 
@@ -48,7 +65,7 @@ import javax.swing.*;
 // 일단 이 프레임 구조도 바꿔야할 것 같다.
 // 맵을 그냥 하나의 프레임으로 바꿔야하나
 
-public class mainFrame extends JFrame{
+public class ClientMain extends JFrame{
 	static final int WIDTH = 800, HEIGHT = 600;
 	static boolean upP = false;
 	static boolean downP = false;
@@ -66,13 +83,13 @@ public class mainFrame extends JFrame{
 	private entryFrame entryP;
 	private entryScreen setNicknameP;
 	private JTextField tField;
-	public static String userName;
+	private String userName;
 	private Thread th1;
 	private Thread th2;
 	static int curMap = 3;
 
 	// 부드러운 캐릭터 이동을 위한 변수선언
-	public mainFrame() {
+	public ClientMain() {
 		Socket socket = null;
 		BufferedReader in = null;
 
@@ -114,6 +131,7 @@ public class mainFrame extends JFrame{
 
 		cPane.add(mapP[3]);
 		player.setPlayerNickname(userName);
+		repaint();
 		//player.add(userLabel);
 		mapEventSet();
 
@@ -130,13 +148,11 @@ public class mainFrame extends JFrame{
 				if(("["+userName+"]님이 나가셨습니다.").equals(inputMsg)){
 					break;
 				}
-				Thread.sleep(1000);
+				//Thread.sleep(1000);
 				System.out.println("From : " + inputMsg);
 			}
 		}catch (IOException i){
 			System.out.println("서버와 접속이 끊어졌습니다.");
-		} catch (InterruptedException e) {
-			throw new RuntimeException(e);
 		} finally {
 			try{
 				socket.close();
@@ -148,7 +164,7 @@ public class mainFrame extends JFrame{
 	}
 	public void setFrame() {
 		// 메인 프레임 초기화
-		setTitle("test1");
+		setTitle("소프트웨어학과 IN METAVERSE(클라이언트용)");
 		setSize(WIDTH, HEIGHT);
 		
 		setResizable(false);
@@ -159,10 +175,11 @@ public class mainFrame extends JFrame{
 	}
 	public void setPanel() {
 		for(int i = 0; i<7; i++) {
-			mapP[i] = new map();
+			mapP[i] = new map("map"+i);
 		}
 		entryP.add(setNicknameP);
 		cPane.add(entryP);
+		repaint();
 		System.out.println("초기 유저네임 : " + userName);
 		//cPane.add(mapP[3]);
 
@@ -345,7 +362,7 @@ public class mainFrame extends JFrame{
 		}
 	}
 	public static void main(String[] args) {
-		new mainFrame();
+		new ClientMain();
 	}
 }
 class userThread extends Thread{

@@ -6,7 +6,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class multiServer {
+
+/*public class multiServer {
     public multiServer(){
         ServerSocket serverSocket = null;
         Socket socket = null;
@@ -87,4 +88,4 @@ class connectServer extends Thread{
             out.flush();
         }
     }
-}
+}*/

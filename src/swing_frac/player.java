@@ -23,6 +23,7 @@ public class player extends JPanel{
 	public void setPlayerNickname(String nickname){
 		this.nickname.setText(nickname);
 	}
+	public String getName(){ return this.nickname.getText();}
 	public void paintComponent(Graphics g) {
 		int playerWidth = 45;
 		int playerHeight = 55;
