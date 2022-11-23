@@ -7,6 +7,9 @@ import java.io.*;
 import java.util.Scanner;
 import javax.swing.*;
 // 22.11.23
+// 리드라인을 이용해서 서로 데이터 가져와서 반영해보자
+
+// 22.11.23
 // mainFrame이 client고 ServerAdmin이 server인 상황임
 // 일단 클라이언트가 접속할 때마다 서버에 캐릭터 추가까지는 했다..
 // 해결해야할 문제

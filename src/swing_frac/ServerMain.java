@@ -59,7 +59,7 @@ public class ServerMain extends JFrame{
     private moveToMap mControl;
 
     private objectSettings objTest;
-    private map mapP[];
+    public map mapP[];
     private player player;
     //static map1Object3 t3 = new map1Object3();
     //statictField = new map1Object1();
@@ -72,11 +72,9 @@ public class ServerMain extends JFrame{
     private Thread th2;
     static int curMap = 3;
 
-    // 부드러운 캐릭터 이동을 위한 변수선언
-    public ServerMain() {
+    public void start(){
         ServerSocket serverSocket = null;
         Socket socket = null;
-        BufferedReader in = null;
 
         // GUI 부분 초기화
         cPane = getContentPane();
@@ -127,7 +125,7 @@ public class ServerMain extends JFrame{
                 System.out.println("[클라이언트 연결 대기중]");
                 socket = serverSocket.accept();
 
-                connectServer connectServer = new connectServer(socket);
+                connectServer connectServer = new connectServer(socket, this);
                 connectServer.start();
             }
         }catch (IOException e){
@@ -143,6 +141,10 @@ public class ServerMain extends JFrame{
                 }
             }
         }
+    }
+    // 부드러운 캐릭터 이동을 위한 변수선언
+    public ServerMain() {
+
     }
     public void setFrame() {
         // 메인 프레임 초기화
@@ -343,73 +345,77 @@ public class ServerMain extends JFrame{
             }
         }
     }
-    class connectServer extends Thread{
-        List<PrintWriter> list = Collections.synchronizedList(new ArrayList<PrintWriter>());
-        Socket socket = null;
-        BufferedReader in = null;
-        PrintWriter out = null;
-        player player;
-        Vector<player> players = new Vector<player>();
+    public static void main(String[] args) {
+        ServerMain main = new ServerMain();
+        main.start();
+    }
+}
+class connectServer extends Thread{
+    // 무조건 스태틱이어야 동기화 됌
+    static List<PrintWriter> list = Collections.synchronizedList(new ArrayList<PrintWriter>());
+    Socket socket = null;
+    BufferedReader in = null;
+    PrintWriter out = null;
+    player player;
+    Vector<player> players = new Vector<player>();
+    Vector<String> playersName = new Vector<String>();
+    ServerMain main;
 
-        public connectServer(Socket socket){
-            this.socket = socket;
-            player = new player();
+    public connectServer(Socket socket, ServerMain main){
+        this.socket = socket;
+        this.main = main;
+        player = new player();
+        try{
+            out = new PrintWriter(socket.getOutputStream());
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            list.add(out);
+        }catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+    @Override
+    public void run(){
+        String name = "";
+        //player player2 = new player();
+        try{
+            name = in.readLine(); // 나중에 캐릭터 닉네임으로 변경해야함
+            System.out.println("["+name+" 새연결 생성]");
+            sendAll("["+name+"]님이 들어오셨습니다.");
+            //playersName.add(name);
+            // 플레이어 접속할 때마다 맵에 캐릭터 추가
+            player.setPlayerNickname(name);
+            players.add(player);
+            for(int i=0; i<players.size(); i++){
+                if(name.equals(players.get(i).getName())){
+                    main.mapP[3].add(players.get(i));
+                    players.remove(i);
+                    main.repaint();
+                }
+            }
+            while(in != null){
+                String inputMsg = in.readLine();
+                if("종료".equals(inputMsg)){
+                    break;
+                }
+                sendAll(name + ">> " + inputMsg);
+            }
+        } catch (IOException e) {
+            System.out.println("["+name + " 접속 끊김]");
+        } finally {
+            sendAll("["+name+"]님이 나가셨습니다.");
+            list.remove(out);
             try{
-                out = new PrintWriter(socket.getOutputStream());
-                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                list.add(out);
-            }catch(IOException e){
+                socket.close();
+            }catch (IOException e){
                 e.printStackTrace();
             }
         }
-        @Override
-        public void run(){
-            String name = "";
-            //player player2 = new player();
-            try{
-                name = in.readLine(); // 나중에 캐릭터 닉네임으로 변경해야함
-                System.out.println("["+name+" 새연결 생성]");
-                sendAll("["+name+"]님이 들어오셨습니다.");
-
-                // 플레이어 접속할 때마다 맵에 캐릭터 추가
-                player.setPlayerNickname(name);
-                players.add(player);
-                for(int i=0; i<players.size(); i++){
-                    if(name.equals(players.get(i).getName())){
-                        mapP[3].add(players.get(i));
-                        players.remove(i);
-                    }
-                }
-                repaint();
-                while(in != null){
-                    String inputMsg = in.readLine();
-                    if("종료".equals(inputMsg)){
-                        break;
-                    }
-                    sendAll(name + ">> " + inputMsg);
-                }
-            } catch (IOException e) {
-                System.out.println("["+name + " 접속 끊김]");
-            } finally {
-                sendAll("["+name+"]님이 나가셨습니다.");
-                list.remove(out);
-                try{
-                    socket.close();
-                }catch (IOException e){
-                    e.printStackTrace();
-                }
-            }
-            System.out.println("["+name + " 연결종료]");
-        }
-        public void sendAll(String s){
-            for(PrintWriter out : list){
-                out.println(s);
-                out.flush();
-            }
-        }
+        System.out.println("["+name + " 연결종료]");
     }
-
-    public static void main(String[] args) {
-        new ServerMain();
+    private void sendAll(String s){
+        for(PrintWriter out : list){
+            out.println(s);
+            out.flush();
+        }
     }
 }
