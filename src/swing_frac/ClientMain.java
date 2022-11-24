@@ -5,6 +5,7 @@ import java.awt.event.*;
 import java.net.*;
 import java.io.*;
 import java.util.Scanner;
+import java.util.Vector;
 import javax.swing.*;
 // 22.11.23
 // 리드라인을 이용해서 서로 데이터 가져와서 반영해보자
@@ -78,8 +79,8 @@ public class ClientMain extends JFrame{
 	private moveToMap mControl;
 
 	private objectSettings objTest;
-	private map mapP[];
-	private player player;
+	public map mapP[];
+	public player player;
 	//static map1Object3 t3 = new map1Object3();
 	//statictField = new map1Object1();
 	//static map1Object2 t2 = new map1Object2();
@@ -90,9 +91,11 @@ public class ClientMain extends JFrame{
 	private Thread th1;
 	private Thread th2;
 	static int curMap = 3;
+	Vector<String> playersName;
+	connectServer connectServer = new connectServer();
 
 	// 부드러운 캐릭터 이동을 위한 변수선언
-	public ClientMain() {
+	public ClientMain() throws IOException {
 		Socket socket = null;
 		BufferedReader in = null;
 
@@ -106,6 +109,8 @@ public class ClientMain extends JFrame{
 		setNicknameP = new entryScreen();
 		tField = setNicknameP.getTextField();
 		userName = setNicknameP.getNickname();
+
+		playersName = connectServer.playersName;
 		setFrame();
 		setPanel();
 		entryEventSet();
@@ -136,23 +141,47 @@ public class ClientMain extends JFrame{
 		player.setPlayerNickname(userName);
 		repaint();
 		//player.add(userLabel);
-		mapEventSet();
 
 		try{
 			socket = new Socket("localhost", 7999);
 			System.out.println("[서버와 연결되었습니다.]");
+			mapEventSet(socket);
+			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
+			// 클라이언트가 서버에 접속했을 경우
+			// 본인외의 서버 혹은 클라이언트의 위치에 맞게 캐릭터 새로 그리기
+			// 현재 같은 맵에 있는 유저끼리만 그려야함
+
+
+			// 클라이언트가 서버로 채팅메세지 보내는 스레드
 			userThread userThread = new userThread(socket, userName);
 			userThread.start();
 
-			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			while(in != null){
 				String inputMsg = in.readLine();
-				if(("["+userName+"]님이 나가셨습니다.").equals(inputMsg)){
-					break;
+				System.out.println("서버에서 보내준 정보 타입은? " + inputMsg.getClass().getSimpleName());
+				if(inputMsg.contains("들어오셨습니다.")){
+					System.out.println("입장 체크는 어캐하노");
+					AddUserThread addThread = new AddUserThread(in.readLine(), this);
+					addThread.start();
 				}
-				//Thread.sleep(1000);
-				System.out.println("From : " + inputMsg);
+				else if(!inputMsg.matches("^[0-9]+$")){
+					if(("["+userName+"]님이 나가셨습니다.").equals(inputMsg)){
+						break;
+					}
+					//Thread.sleep(1000);
+					System.out.println("From : " + inputMsg);
+				}
+				else{
+					int moveX = Integer.parseInt(inputMsg);
+					int moveY = Integer.parseInt(in.readLine());
+					int indexOfMap = Integer.parseInt(in.readLine());
+					playersName.add(in.readLine());
+					// 이 정보들로 유저들 위치 새로 그리자
+					// 그 전에 플에이어들 부터 각 클라이언트에도 추가해야함
+					// 이제 여기 만들자
+					System.out.println("서버에서 보내준게 숫자임 ㅋㅋ");
+				}
 			}
 		}catch (IOException i){
 			System.out.println("서버와 접속이 끊어졌습니다.");
@@ -243,7 +272,8 @@ public class ClientMain extends JFrame{
 		player.setFocusable(true);
 		player.requestFocus();
 	}
-	public void mapEventSet(){
+	public void mapEventSet(Socket socket) throws IOException {
+		PrintStream out = new PrintStream(socket.getOutputStream());
 		player.setFocusable(true);
 		player.requestFocus();
 		player.addKeyListener(new KeyAdapter() {
@@ -275,6 +305,7 @@ public class ClientMain extends JFrame{
 					}
 					else if(player.getY() != 0){
 						player.setLocation(player.getX(), player.getY()-10);
+						sendLocationToServer(out, player.getX(), player.getY(),curMap, userName);
 					}
 				}
 				if (downP) {
@@ -284,6 +315,7 @@ public class ClientMain extends JFrame{
 					}
 					else if(player.getY() != 500){
 						player.setLocation(player.getX(), player.getY()+10);
+						sendLocationToServer(out, player.getX(), player.getY(),curMap, userName);
 					}
 				}
 				if (leftP) {
@@ -294,6 +326,7 @@ public class ClientMain extends JFrame{
 					}
 					else if(player.getX() != 0) {
 						player.setLocation(player.getX()-10, player.getY());
+						sendLocationToServer(out, player.getX(), player.getY(),curMap, userName);
 					}
 				}
 				if (rightP) {
@@ -303,6 +336,7 @@ public class ClientMain extends JFrame{
 					}
 					else if(player.getX() != 740) {
 						player.setLocation(player.getX()+10, player.getY());
+						sendLocationToServer(out, player.getX(), player.getY(),curMap, userName);
 					}
 				}
 				System.out.println("keypressed X : " + player.getX() + " Y : " + player.getY());
@@ -325,6 +359,16 @@ public class ClientMain extends JFrame{
 			}
 		});
 		System.out.println(curMap);
+	}
+	public void sendLocationToServer(PrintStream out, int x, int y, int curMap, String playerName){
+		// x, y는 이동한 위치
+		// curMap은 해당 플레이어의 현재 위치
+		// playerName은 플레이어 이름
+		out.println(player.getX());
+		out.println(player.getY());
+		out.println(curMap);
+		out.println(playerName);
+		out.flush();
 	}
 	public void entryEventSet() {
 		tField.addKeyListener(new KeyAdapter(){
@@ -364,7 +408,7 @@ public class ClientMain extends JFrame{
 			}
 		}
 	}
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		new ClientMain();
 	}
 }
@@ -395,5 +439,43 @@ class userThread extends Thread{
 			e.printStackTrace();
 		}
 	}
+}
+class AddUserThread extends Thread{
+	ClientMain main;
+	String name;
+	player player;
+	public AddUserThread(String name, ClientMain main){
+		this.name = name;
+		this.main = main;
+		player = new player();
+	}
+	@Override
+	public void run(){
+		if(!name.equals(main.player.getName())){
+			player.setPlayerNickname(name);
+			main.mapP[3].add(player);
+			main.repaint();
+		}
+		/*System.out.println("왜 안돌아갈까잉 " + playersName.size());
+		while(playersName.size()!= 0){
+			// 현재의 클라이언트 수만큼 플레이어 추가
+			for(String name : playersName){
+				System.out.println(name + "을 추가하라고 왜 안행");
+				player = new player();
+				player.setPlayerNickname(name);
+				//플레이어를 클라이언트에 추가 더 만들어야함
+				removeName.add(name);
+				players.add(player);
+			}
+			playersName.removeAll(removeName);
+			// 플레이어를 맵에 추가
+			for(int i = 0; i<players.size(); i++){
+				System.out.println("맵추가 루프인디 왜안돼");
+				main.mapP[3].add(players.get(i));
+				players.remove(i);
+				main.repaint();
+			}
+		}*/
 
+	}
 }

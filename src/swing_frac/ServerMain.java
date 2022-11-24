@@ -125,7 +125,7 @@ public class ServerMain extends JFrame{
                 System.out.println("[클라이언트 연결 대기중]");
                 socket = serverSocket.accept();
 
-                connectServer connectServer = new connectServer(socket, this);
+                connectServer connectServer = new connectServer(socket,curMap, this);
                 connectServer.start();
             }
         }catch (IOException e){
@@ -142,7 +142,6 @@ public class ServerMain extends JFrame{
             }
         }
     }
-    // 부드러운 캐릭터 이동을 위한 변수선언
     public ServerMain() {
 
     }
@@ -288,6 +287,7 @@ public class ServerMain extends JFrame{
                 }
                 System.out.println("keypressed X : " + player.getX() + " Y : " + player.getY());
             }
+            // 부드러운 캐릭터 이동을 위한 변수선언
             @Override
             public void keyReleased(KeyEvent e) {
                 // TODO Auto-generated method stub
@@ -360,8 +360,10 @@ class connectServer extends Thread{
     Vector<player> players = new Vector<player>();
     Vector<String> playersName = new Vector<String>();
     ServerMain main;
+    int curMap;
 
-    public connectServer(Socket socket, ServerMain main){
+    public connectServer(){}
+    public connectServer(Socket socket, int curMap, ServerMain main){
         this.socket = socket;
         this.main = main;
         player = new player();
@@ -381,23 +383,56 @@ class connectServer extends Thread{
             name = in.readLine(); // 나중에 캐릭터 닉네임으로 변경해야함
             System.out.println("["+name+" 새연결 생성]");
             sendAll("["+name+"]님이 들어오셨습니다.");
+
+            sendAll(name); // 닉네임만 따로 한 번 더 보내줌
+
             //playersName.add(name);
             // 플레이어 접속할 때마다 맵에 캐릭터 추가
+            // 같은 맵에 있을 때만 그리기
+            // 생성될 땐 3번 맵
             player.setPlayerNickname(name);
+            playersName.add(player.getName());
             players.add(player);
-            for(int i=0; i<players.size(); i++){
-                if(name.equals(players.get(i).getName())){
-                    main.mapP[3].add(players.get(i));
-                    players.remove(i);
-                    main.repaint();
+
+            final String finalName = name; // 익명클래스는 자신을 감싸는 블록안의 지역변수를 사용할 수 없음
+            // 그래서 final로 상수화 하던지 전역변수로 만들어야함
+
+            // 새 플레이어들을 추가해주는 익명 쓰레드
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    for(int i=0; i<players.size(); i++){
+                        if(finalName.equals(players.get(i).getName())){
+                            main.mapP[3].add(players.get(i));
+                            players.remove(i);
+                            main.repaint();
+                        }
+                    }
                 }
-            }
+            }).start();
+            //System.out.println("in은 뭔가 " + in);
+            //System.out.println("in.readline 타입비교 가능 하려나? " + in.readLine());
             while(in != null){
+                // 생각한 방식 클라이언트에서 캐릭터이동 후 좌표를 보내주면
+                // 문자만 있는지 숫자만 있는지 판단함
+                // 숫자만 있으면 캐릭터의 좌표, 아니면 채팅내용으로 판단 후 분기문 실행하도록 하자
                 String inputMsg = in.readLine();
-                if("종료".equals(inputMsg)){
-                    break;
+                //System.out.println("클라이언트가 보낸 정보 타입은? " + inputMsg.getClass().getSimpleName());
+                if(!inputMsg.matches("^[0-9]+$")){ // 숫자가 아닌 나머지 입력들
+                    if("종료".equals(inputMsg)){
+                        break;
+                    }
+                    sendAll(name + ">> " + inputMsg);
+                }else{
+                    //System.out.println("클라이언트가 보낸게 숫자임");
+                    int moveX = Integer.parseInt(inputMsg);
+                    int moveY = Integer.parseInt(in.readLine());
+                    int indexOfMap = Integer.parseInt(in.readLine());
+
+                    int indexOfPlayerName = playersName.indexOf(in.readLine());
+                    // 클라이언트로부터 전달받은 캐릭터 이동 정보를 다른 모든 클라이언트들한테 보냄
+                    sendLocationAll(moveX, moveY, indexOfMap, playersName.get(indexOfPlayerName));
                 }
-                sendAll(name + ">> " + inputMsg);
             }
         } catch (IOException e) {
             System.out.println("["+name + " 접속 끊김]");
@@ -415,6 +450,15 @@ class connectServer extends Thread{
     private void sendAll(String s){
         for(PrintWriter out : list){
             out.println(s);
+            out.flush();
+        }
+    }
+    private void sendLocationAll(int x, int y, int curMap, String playerName){
+        for(PrintWriter out : list){
+            out.println(x);
+            out.println(y);
+            out.println(curMap);
+            out.println(playerName);
             out.flush();
         }
     }

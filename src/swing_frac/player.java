@@ -12,7 +12,8 @@ public class player extends JPanel{
 		nickname = new JLabel();
 		nickname.setFont(new Font("Consolas 굵게", Font.BOLD, 15));
 		nickname.setBounds(0, 0, 200, 20);
-		nickname.setBackground(Color.BLACK);
+		nickname.setBackground(Color.WHITE);
+		nickname.setForeground(Color.WHITE);
 		setBounds(300, 200, 150, 150);
 		setBackground(Color.WHITE);
 		setLayout(null);
