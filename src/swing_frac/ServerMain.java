@@ -357,7 +357,7 @@ class connectServer extends Thread{
     BufferedReader in = null;
     PrintWriter out = null;
     player player;
-    Vector<player> players = new Vector<player>();
+    static Vector<player> players = new Vector<player>();
     Vector<String> playersName = new Vector<String>();
     ServerMain main;
     int curMap;
@@ -394,6 +394,14 @@ class connectServer extends Thread{
             playersName.add(player.getName());
             players.add(player);
 
+            System.out.print("players : ");
+            sendAll(Integer.toString(players.size()));
+            for(player player : players){
+                System.out.print(player.getName() + " ");
+                sendAll(player.getName());
+                //players.remove(player); // 방금여기바꿈
+            }
+
             final String finalName = name; // 익명클래스는 자신을 감싸는 블록안의 지역변수를 사용할 수 없음
             // 그래서 final로 상수화 하던지 전역변수로 만들어야함
 
@@ -404,7 +412,7 @@ class connectServer extends Thread{
                     for(int i=0; i<players.size(); i++){
                         if(finalName.equals(players.get(i).getName())){
                             main.mapP[3].add(players.get(i));
-                            players.remove(i);
+                            //players.remove(i);
                             main.repaint();
                         }
                     }
@@ -438,6 +446,7 @@ class connectServer extends Thread{
             System.out.println("["+name + " 접속 끊김]");
         } finally {
             sendAll("["+name+"]님이 나가셨습니다.");
+            sendAll(name);
             list.remove(out);
             try{
                 socket.close();

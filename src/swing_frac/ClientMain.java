@@ -4,9 +4,17 @@ import java.awt.*;
 import java.awt.event.*;
 import java.net.*;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Scanner;
 import java.util.Vector;
+import java.util.List;
 import javax.swing.*;
+
+// 22.11.24
+// 어찌저찌 반영이 되는 방법을 찾긴 했는데 어설픈 부분이 한두 곳이 아니다
+// 금욜 오전 근로때 마저 찾아보자
+
 // 22.11.23
 // 리드라인을 이용해서 서로 데이터 가져와서 반영해보자
 
@@ -79,7 +87,7 @@ public class ClientMain extends JFrame{
 	private moveToMap mControl;
 
 	private objectSettings objTest;
-	public map mapP[];
+	static public map mapP[];
 	public player player;
 	//static map1Object3 t3 = new map1Object3();
 	//statictField = new map1Object1();
@@ -87,12 +95,15 @@ public class ClientMain extends JFrame{
 	private entryFrame entryP;
 	private entryScreen setNicknameP;
 	private JTextField tField;
-	private String userName;
+	public String userName;
 	private Thread th1;
 	private Thread th2;
 	static int curMap = 3;
-	Vector<String> playersName;
+	static Vector<String> playersName = new Vector<String>();
+	static Vector<player> players = new Vector<player>();
 	connectServer connectServer = new connectServer();
+	static List<player> otherPlayers = Collections.synchronizedList(new ArrayList<player>());
+	static List<player> targetNotAdd = Collections.synchronizedList(new ArrayList<player>());
 
 	// 부드러운 캐릭터 이동을 위한 변수선언
 	public ClientMain() throws IOException {
@@ -111,6 +122,7 @@ public class ClientMain extends JFrame{
 		userName = setNicknameP.getNickname();
 
 		playersName = connectServer.playersName;
+
 		setFrame();
 		setPanel();
 		entryEventSet();
@@ -139,6 +151,7 @@ public class ClientMain extends JFrame{
 
 		cPane.add(mapP[3]);
 		player.setPlayerNickname(userName);
+
 		repaint();
 		//player.add(userLabel);
 
@@ -152,22 +165,66 @@ public class ClientMain extends JFrame{
 			// 본인외의 서버 혹은 클라이언트의 위치에 맞게 캐릭터 새로 그리기
 			// 현재 같은 맵에 있는 유저끼리만 그려야함
 
-
 			// 클라이언트가 서버로 채팅메세지 보내는 스레드
 			userThread userThread = new userThread(socket, userName);
 			userThread.start();
 
 			while(in != null){
 				String inputMsg = in.readLine();
-				System.out.println("서버에서 보내준 정보 타입은? " + inputMsg.getClass().getSimpleName());
+				//System.out.println("서버에서 보내준 정보 타입은? " + inputMsg.getClass().getSimpleName());
 				if(inputMsg.contains("들어오셨습니다.")){
-					System.out.println("입장 체크는 어캐하노");
-					AddUserThread addThread = new AddUserThread(in.readLine(), this);
+					//System.out.println("입장 체크는 어캐하노");
+					String name = in.readLine();
+
+
+					// 뭔가 문제가 있어
+					// 해당 클라이언트 생성 전에 이미 있던 닉네임을 가져오는 법 찾아야함
+					// 만들어야 하는 태스크
+					// 1. 처음 접속 시, 본인 제외 플레이어 리스트에 있는 캐릭터 그리기
+					// 2. 움직이면 서버로 정보를 보내고, 서버는 모든 클라이언트에게 뿌려줌
+					// 3. 뿌려준 정보를 받아서 자기 자신의 정보면 무시, 다른 클라이언트의 정보면 반영
+
+
+					System.out.println("새로 받아온 이름 " +name);
+					int countPlayers = Integer.parseInt(in.readLine());
+					System.out.println("prenames " +countPlayers);
+					System.out.println("닉네임들");
+					System.out.print("player 네임은 : " + player.getName() + " 다른 사람들 꺼는 \n");
+
+					otherPlayers.clear();
+					players.clear();
+					for(int i = 0; i<countPlayers; i++){
+
+						player otherPlayer = new player();
+						otherPlayer.setPlayerNickname(in.readLine());
+						otherPlayers.add(otherPlayer);
+						players.add(otherPlayer);
+						System.out.println("countPlayer 실행 중 ");
+						//System.out.print("otherPlayers에 저장된 값 : " + otherPlayers.get(i).getName()+" ");
+						//System.out.print("players에 저장된 값 : " + players.get(i).getName()+" \n");
+					}
+
+					System.out.println();
+
+					AddUserThread addThread = new AddUserThread(name, this);
 					addThread.start();
 				}
 				else if(!inputMsg.matches("^[0-9]+$")){
 					if(("["+userName+"]님이 나가셨습니다.").equals(inputMsg)){
 						break;
+					}
+					else if(inputMsg.contains("나가셨습니다.")){
+						System.out.println("웨 안됌?");
+						String outPlayer = in.readLine();
+						int outPlayerIndex = 0;
+						for(int i = 0; i<otherPlayers.size(); i++){
+							if(otherPlayers.get(i).getName().equals(outPlayer)){
+								outPlayerIndex = i;
+							}
+						}
+						mapP[curMap].remove(otherPlayers.get(outPlayerIndex));
+						otherPlayers.remove(outPlayerIndex);
+						mapP[curMap].repaint();
 					}
 					//Thread.sleep(1000);
 					System.out.println("From : " + inputMsg);
@@ -176,11 +233,16 @@ public class ClientMain extends JFrame{
 					int moveX = Integer.parseInt(inputMsg);
 					int moveY = Integer.parseInt(in.readLine());
 					int indexOfMap = Integer.parseInt(in.readLine());
-					playersName.add(in.readLine());
+					String playerName = in.readLine();
 					// 이 정보들로 유저들 위치 새로 그리자
 					// 그 전에 플에이어들 부터 각 클라이언트에도 추가해야함
 					// 이제 여기 만들자
-					System.out.println("서버에서 보내준게 숫자임 ㅋㅋ");
+					System.out.println(playerName + "에서 정보가 왔는데 지금 나는? " + userName);
+					//if(!playerName.equals(userName)){
+					RealTimeUpdate realTimeUpdate = new RealTimeUpdate(moveX, moveY, indexOfMap, userName, playerName, curMap, this);
+					realTimeUpdate.start();
+					//}
+					System.out.println(playerName + "에서 보낸 좌표 정보를 받았음");
 				}
 			}
 		}catch (IOException i){
@@ -444,38 +506,80 @@ class AddUserThread extends Thread{
 	ClientMain main;
 	String name;
 	player player;
-	public AddUserThread(String name, ClientMain main){
+	List<player> targetAdd = Collections.synchronizedList(new ArrayList<player>());
+	public AddUserThread(String name, ClientMain main) throws IOException {
 		this.name = name;
 		this.main = main;
 		player = new player();
 	}
 	@Override
 	public void run(){
-		if(!name.equals(main.player.getName())){
-			player.setPlayerNickname(name);
-			main.mapP[3].add(player);
+		System.out.println("Adduser에서의 otherPlayers 길이 : " + main.otherPlayers.size());
+
+		targetAdd.addAll(main.otherPlayers);
+		System.out.println("addall 결과 : " + targetAdd);
+		System.out.println("targetNotAdd 값 : " + main.targetNotAdd);
+		targetAdd.remove(0);
+		System.out.println("removeall 결과 : " + targetAdd);
+
+		for(player player : targetAdd){
+			if(!player.getName().equals(main.userName)){
+				System.out.print("addplayer돌아가는 중 : " + player.getName() + " ");
+				if(player.getName().equals(name)){
+					System.out.println("새로 생성된 애 추가");
+					main.mapP[3].add(player);
+					break;
+				}
+				//player.setPlayerNickname(name);
+				//System.out.println("아놔 저장 되긴 허는겨? " + main.targetNotAdd.size());
+				// 플레이어 추가를 매번하는게 아니라 없을 때만 추가
+				// 집 가서 마저 해보자
+			}
 			main.repaint();
 		}
-		/*System.out.println("왜 안돌아갈까잉 " + playersName.size());
-		while(playersName.size()!= 0){
-			// 현재의 클라이언트 수만큼 플레이어 추가
-			for(String name : playersName){
-				System.out.println(name + "을 추가하라고 왜 안행");
-				player = new player();
-				player.setPlayerNickname(name);
-				//플레이어를 클라이언트에 추가 더 만들어야함
-				removeName.add(name);
-				players.add(player);
-			}
-			playersName.removeAll(removeName);
-			// 플레이어를 맵에 추가
-			for(int i = 0; i<players.size(); i++){
-				System.out.println("맵추가 루프인디 왜안돼");
-				main.mapP[3].add(players.get(i));
-				players.remove(i);
-				main.repaint();
-			}
-		}*/
-
 	}
 }
+class RealTimeUpdate extends Thread{
+	private int x, y, curMap, receivedMapIndex;
+	private String playersName;
+	private ClientMain main;
+	private player player;
+	private String curUser;
+	public RealTimeUpdate(int x, int y, int receivedMapIndex,String curUser, String playersName, int curMap, ClientMain main){
+		this.x = x;
+		this.y = y;
+		this.receivedMapIndex = receivedMapIndex;
+		this.playersName = playersName;
+		this.main = main;
+		this.curMap = curMap;
+		this.player = new player();
+		this.curUser = curUser;
+	}
+	@Override
+	public void run(){
+		System.out.println("다른맵에선 왜 안돼 curmap : " + curMap + "receivedindex = " + receivedMapIndex);
+		for(player player : main.otherPlayers){
+			if(!player.getName().equals(curUser)){
+				System.out.println("넘겨받은 이름 : " + playersName + ", 플레이어 리스트의 이름 : "+player.getName());
+				if(playersName.equals(player.getName()) && curMap == receivedMapIndex){
+					main.mapP[receivedMapIndex].add(player);
+					player.setLocation(x, y);
+					break;
+				}
+				else if(playersName.equals(player.getName()) && !(curMap == receivedMapIndex)){
+					main.mapP[curMap].remove(player);
+					//main.otherPlayers.remove(player);
+					break;
+				}
+			}
+			main.mapP[receivedMapIndex].repaint();
+			main.mapP[curMap].repaint();
+			// 여러 명일 때 왜 자꾸 그려지지? 생각해보자
+
+			// 뭔가 이상함 고쳐야 함
+		}
+	}
+}
+// 22.11.26 해결해야할 문제
+// 1. 이미 있는 캐릭터 다시 그려짐
+// 2. 다른 플레이어가 움직이다가 새로운 사람 들어오면 캐릭터 복사됌 뭐임?
