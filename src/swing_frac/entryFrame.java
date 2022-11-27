@@ -8,7 +8,7 @@ import java.util.Objects;
 import javax.swing.*;
 
 public class entryFrame extends JPanel{
-	Image img = new ImageIcon(Objects.requireNonNull(entryFrame.class.getResource("../images/entry.png"))).getImage();
+	Image img = new ImageIcon(Objects.requireNonNull(entryFrame.class.getResource("../images/entryBack.png"))).getImage();
 	// Image img = new ImageIcon(entryFrame.class.getResource("../images/entry.png")).getImage();
 	//entryScreen setNickname = new entryScreen();
 	public entryFrame() {

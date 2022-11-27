@@ -28,7 +28,7 @@ public class ChatPanel extends JPanel implements Runnable {
         setLayout(null);
         textField.setBounds(10, 510, 260, 40);
         textArea.setBounds(10, 10, 260, 480);
-        textArea.append("chatting string enter");
+        textArea.append("@@@@ 소프트웨어 IN METAVERSE @@@@");
         textArea.setEditable(false);
         textArea.setVisible(true);
         textField.setVisible(true);
@@ -47,7 +47,6 @@ public class ChatPanel extends JPanel implements Runnable {
         });
 
     }
-
     @Override
     public void run() {
         while (true) {

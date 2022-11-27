@@ -158,15 +158,25 @@ public class ClientMain extends JFrame{
 		//chat.setBackground(Color.BLACK);
 		setVisible(true);
 
+
 		JTextField textField = new JTextField(30);
 		JTextArea textArea = new JTextArea(30, 30);
+		JScrollPane scrollPane = new JScrollPane(textArea, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
 		textField.setBounds(10, 510, 260, 40);
 		textArea.setBounds(10, 10, 260, 480);
-		textArea.append("chatting string enter\n");
+		scrollPane.setBounds(10, 10, 260, 480);
+
+
+		textArea.append("@@ SOFTWARE IN METAVERSE @@\n");
 		textArea.setEditable(false);
+		textArea.setFont(new Font("Consolas 굵게", Font.BOLD, 13));
+		textField.setFont(new Font("Consolas 굵게", Font.BOLD, 13));
+
 		textArea.setVisible(true);
 		textField.setVisible(true);
-		chat.add(textArea);
+		//chat.add(textArea);
+		chat.add(scrollPane);
 		chat.add(textField);
 
 		//textField.addActionListener(new ActionListener() {
@@ -266,13 +276,18 @@ public class ClientMain extends JFrame{
 						mapP[curMap].repaint();
 					}
 					//Thread.sleep(1000);
-					if(inputMsg.length()>24){ // 너무 길어서 채팅창에 글자 짤리는거 방지
+					//if(textArea.getLineCount()>23){
+					//	textArea.removeAll();
+					//	textArea.repaint();
+					//}
+					if(inputMsg.length()>30){ // 너무 길어서 채팅창에 글자 짤리는거 방지
 						longString.delete(0, longString.length());
 						longString.append(inputMsg);
-						longString.insert(24, "\n");
+						longString.insert(30, "\n");
 						inputMsg = String.valueOf(longString);
 					}
-					textArea.append("From : " + inputMsg + "\n");
+					textArea.append(inputMsg + "\n");
+					textArea.setCaretPosition(textArea.getDocument().getLength());
 					System.out.println("From : " + inputMsg);
 				}
 				else{
@@ -331,13 +346,13 @@ public class ClientMain extends JFrame{
 		//tField);
 		//mapP[3].add(t2);
 
-		mapP[0].setLabeltext("102, 101 복도");
-		mapP[1].setLabeltext("디정 후문");
-		mapP[2].setLabeltext("연구실들");
-		mapP[3].setLabeltext("디정 중앙");
-		mapP[4].setLabeltext("디셈 복도");
-		mapP[5].setLabeltext("디정 정문");
-		mapP[6].setLabeltext("116 복도");
+		//mapP[0].setLabeltext("102, 101 복도");
+		//mapP[1].setLabeltext("디정 후문");
+		//m/apP[2].setLabeltext("연구실들");
+		//mapP[3].setLabeltext("디정 중앙");
+		//mapP[4].setLabeltext("디셈 복도");
+		//mapP[5].setLabeltext("디정 정문");
+		//mapP[6].setLabeltext("116 복도");
 
 		// 22.11.11
 		// 맵별 라벨, 폰트 따로 모듈화 필요해보임
@@ -402,6 +417,55 @@ public class ClientMain extends JFrame{
 						break;
 					case KeyEvent.VK_RIGHT:// 방향키(오른)눌렀을때
 						rightP = true;
+						break;
+					case KeyEvent.VK_SPACE:
+						System.out.println("스페이스바 눌림");
+						if (curMap == 1) {
+							if(player.getX() >= 270 && player.getX() <= 320 && player.getY() >= 180 && player.getY() <= 220){
+								try {
+									InformationPanel ip = new InformationPanel("102 강의실 : 강의중 컴퓨터를 사용해 실습할수 있는 강의실이다.", "../images/116.jpg");
+									mapP[curMap].add(ip);
+									ip.setVisible(true);
+									mapP[curMap].repaint();
+								} catch (IOException ex) {
+									ex.printStackTrace();
+								}
+							}
+						} else if (curMap == 0) {
+							if(player.getX() >= 390 && player.getX() <= 440 && player.getY() >= 180 && player.getY() <= 260){
+								try {
+									InformationPanel ip = new InformationPanel("101 강의실 : 강의중 컴퓨터를 사용해 실습할수 있는 강의실이다.", "../images/116.jpg");
+									mapP[curMap].add(ip);
+									ip.setVisible(true);
+									mapP[curMap].repaint();
+								} catch (IOException ex) {
+									ex.printStackTrace();
+								}
+							}
+
+						} else if (curMap == 2) {
+							if(player.getX() >= 410 && player.getX() <= 470 && player.getY() >= 50 && player.getY() <= 140){
+								try {
+									InformationPanel ip = new InformationPanel("게시판 : 학과의 중요한 정보를 얻을 수 있다.", "../images/게시판.jpg");
+									mapP[curMap].add(ip);
+									ip.setVisible(true);
+									mapP[curMap].repaint();
+								} catch (IOException ex) {
+									ex.printStackTrace();
+								}
+							}
+						} else if (curMap == 6) {
+							if(player.getX() >= 510 && player.getX() <= 560 && player.getY() >= 0 && player.getY() <= 60){
+								try {
+									InformationPanel ip = new InformationPanel("116 강의실 : 강의중 컴퓨터를 사용해 실습할수 있는 강의실이다.", "../images/116.jpg");
+									mapP[curMap].add(ip);
+									ip.setVisible(true);
+									mapP[curMap].repaint();
+								} catch (IOException ex) {
+									ex.printStackTrace();
+								}
+							}
+						}
 						break;
 					// 좌표의 기준이 패널의 좌측하단끝 인것 같음
 					default:

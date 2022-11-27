@@ -15,14 +15,14 @@ public class map extends JPanel{
 	Image img;
 	public map(String imgName) {
 		this.imgName = imgName;
-		label.setFont(font1);
-		label.setBounds(320, 20, 300, 100);
-		label.setBackground(Color.BLACK);
+		//label.setFont(font1);
+		//label.setBounds(320, 20, 300, 100);
+		//label.setBackground(Color.BLACK);
 		//label.setOpaque(true);
 		setBounds(0, 0, Width, Height);
 		setLayout(null);
 
-		add(label);
+		//add(label);
 		img = new ImageIcon(Objects.requireNonNull(map.class.getResource("../images/"+imgName+".png"))).getImage();
 
 	}
