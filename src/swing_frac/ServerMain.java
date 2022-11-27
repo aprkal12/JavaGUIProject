@@ -431,7 +431,7 @@ class connectServer extends Thread{
                     if("종료".equals(inputMsg)){
                         break;
                     }
-                    sendAll(name + ">> " + inputMsg);
+                    sendAll(name + " >> " + inputMsg);
                 }else{
                     //System.out.println("클라이언트가 보낸게 숫자임");
                     int moveX = Integer.parseInt(inputMsg);

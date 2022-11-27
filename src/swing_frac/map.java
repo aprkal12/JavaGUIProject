@@ -1,6 +1,8 @@
 package swing_frac;
 
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.Objects;
 import javax.swing.*;
 
@@ -19,6 +21,7 @@ public class map extends JPanel{
 		//label.setOpaque(true);
 		setBounds(0, 0, Width, Height);
 		setLayout(null);
+
 		add(label);
 		img = new ImageIcon(Objects.requireNonNull(map.class.getResource("../images/"+imgName+".png"))).getImage();
 

@@ -101,6 +101,7 @@ public class ClientMain extends JFrame{
 	private entryFrame entryP;
 	private entryScreen setNicknameP;
 	private JTextField tField;
+	private StringBuffer longString;
 	public String userName;
 	private Thread th1;
 	private Thread th2;
@@ -127,6 +128,8 @@ public class ClientMain extends JFrame{
 		tField = setNicknameP.getTextField();
 		userName = setNicknameP.getNickname();
 
+		longString = new StringBuffer();
+
 		playersName = connectServer.playersName;
 
 		setFrame();
@@ -151,8 +154,28 @@ public class ClientMain extends JFrame{
 		setSize(1100, 600);
 		JPanel chat = new JPanel();
 		chat.setBounds(800, 0, 300,600);
-		chat.setBackground(Color.BLACK);
+		chat.setLayout(null);
+		//chat.setBackground(Color.BLACK);
 		setVisible(true);
+
+		JTextField textField = new JTextField(30);
+		JTextArea textArea = new JTextArea(30, 30);
+		textField.setBounds(10, 510, 260, 40);
+		textArea.setBounds(10, 10, 260, 480);
+		textArea.append("chatting string enter\n");
+		textArea.setEditable(false);
+		textArea.setVisible(true);
+		textField.setVisible(true);
+		chat.add(textArea);
+		chat.add(textField);
+
+		//textField.addActionListener(new ActionListener() {
+		//	@Override
+		//	public void actionPerformed(ActionEvent e) {
+
+		//	}
+		//});
+
 		cPane.add(chat);
 
 		cPane.add(mapP[3]);
@@ -172,16 +195,16 @@ public class ClientMain extends JFrame{
 			// 현재 같은 맵에 있는 유저끼리만 그려야함
 
 			// 클라이언트가 서버로 채팅메세지 보내는 스레드
-			userThread userThread = new userThread(socket, userName);
+			userThread userThread = new userThread(socket, userName, textField);
 			userThread.start();
 
 			while(in != null){
 				String inputMsg = in.readLine();
 				//System.out.println("서버에서 보내준 정보 타입은? " + inputMsg.getClass().getSimpleName());
 				if(inputMsg.contains("들어오셨습니다.")){
+					textArea.append(inputMsg+"\n");
 					//System.out.println("입장 체크는 어캐하노");
 					String name = in.readLine();
-
 
 					// 뭔가 문제가 있어
 					// 해당 클라이언트 생성 전에 이미 있던 닉네임을 가져오는 법 찾아야함
@@ -190,7 +213,6 @@ public class ClientMain extends JFrame{
 					// 2. 움직이면 서버로 정보를 보내고, 서버는 모든 클라이언트에게 뿌려줌
 					// 3. 뿌려준 정보를 받아서 자기 자신의 정보면 무시, 다른 클라이언트의 정보면 반영
 
-
 					System.out.println("새로 받아온 이름 " +name);
 					int countPlayers = Integer.parseInt(in.readLine());
 					System.out.println("prenames " +countPlayers);
@@ -198,30 +220,39 @@ public class ClientMain extends JFrame{
 					System.out.println("player 네임은 : " + player.getName());
 
 					//otherPlayers.add(player);
+
 					//otherPlayers.clear();
 					//players.clear();
-					for(int i = 0; i<countPlayers; i++){
-						player otherPlayer = new player();
-						otherPlayer.setPlayerNickname(in.readLine());
-						otherPlayers.add(otherPlayer);
-						players.add(otherPlayer);
-						System.out.println("countPlayer 실행 중 ");
-					}
-					//player otherPlayer = new player();
-					//otherPlayer.setPlayerNickname(name);
-					//otherPlayers.add(otherPlayer);
-					//players.add(otherPlayer);
-					System.out.println("추가 됐니? " + otherPlayers);
-					System.out.println();
 
-					AddUserThread addThread = new AddUserThread(name, this);
-					addThread.start();
+					// 유닛 중복때매 위 처럼 클리어 하고 다시 추가 하고 싶었는데
+					// 그러면 추가된 애들이 다른 객체가 되어버려서
+					// 예전 플레이어들의 실시간 위치 업데이트가 적용되지않음
+
+					for(int i = 0; i<countPlayers; i++){
+						boolean canIAddPlayers = true;
+						String names = in.readLine();
+
+						for(int j = 0; j<otherPlayers.size(); j++){
+							if(otherPlayers.get(j).getName().equals(names)){
+								canIAddPlayers = false;
+								break;
+							}
+						}
+						if(canIAddPlayers){
+							player otherPlayer = new player();
+							otherPlayer.setPlayerNickname(names);
+							otherPlayers.add(otherPlayer);
+							players.add(otherPlayer);
+							System.out.println("countPlayer 실행 중 ");
+						}
+					}
 				}
 				else if(!inputMsg.matches("^[0-9]+$")){
 					if(("["+userName+"]님이 나가셨습니다.").equals(inputMsg)){
 						break;
 					}
 					else if(inputMsg.contains("나가셨습니다.")){
+						//textArea.append(inputMsg + "\n");
 						System.out.println("웨 안됌?");
 						String outPlayer = in.readLine();
 						int outPlayerIndex = 0;
@@ -235,6 +266,13 @@ public class ClientMain extends JFrame{
 						mapP[curMap].repaint();
 					}
 					//Thread.sleep(1000);
+					if(inputMsg.length()>24){ // 너무 길어서 채팅창에 글자 짤리는거 방지
+						longString.delete(0, longString.length());
+						longString.append(inputMsg);
+						longString.insert(24, "\n");
+						inputMsg = String.valueOf(longString);
+					}
+					textArea.append("From : " + inputMsg + "\n");
 					System.out.println("From : " + inputMsg);
 				}
 				else{
@@ -254,6 +292,7 @@ public class ClientMain extends JFrame{
 				}
 			}
 		}catch (IOException i){
+			textArea.append("서버와 접속이 끊어졌습니다.\n");
 			System.out.println("서버와 접속이 끊어졌습니다.");
 		} finally {
 			try{
@@ -262,6 +301,7 @@ public class ClientMain extends JFrame{
 				j.printStackTrace();
 			}
 		}
+		textArea.append("서버 연결종료\n");
 		System.out.println("서버 연결종료");
 	}
 	public void setFrame() {
@@ -429,6 +469,13 @@ public class ClientMain extends JFrame{
 			}
 		});
 		System.out.println(curMap);
+		addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				player.setFocusable(true);
+				player.requestFocus();
+			}
+		});
 	}
 	public void sendLocationToServer(PrintStream out, int x, int y, int curMap, String playerName){
 		// x, y는 이동한 위치
@@ -486,10 +533,14 @@ class userThread extends Thread{
 	Socket socket = null;
 	String name;
 	Scanner scanner = new Scanner(System.in);
+	JTextField textField = new JTextField();
+	String outputMsg;
 
-	public userThread(Socket socket, String name){
+	public userThread(Socket socket, String name, JTextField textField){
 		this.socket = socket;
 		this.name = name;
+		this.textField = textField;
+
 	}
 	@Override
 	public void run(){
@@ -497,76 +548,21 @@ class userThread extends Thread{
 			PrintStream out = new PrintStream(socket.getOutputStream());
 			out.println(name);
 			out.flush();
-			while(true){
-				String outputMsg = scanner.nextLine();
-				out.println(outputMsg);
-				out.flush();
-				if("종료".equals(outputMsg)){
-					break;
+				//String outputMsg = scanner.nextLine();
+			textField.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					JTextField textField1 = (JTextField)e.getSource();
+					outputMsg = textField1.getText();
+
+					out.println(outputMsg);
+					out.flush();
+					textField1.setText("");
 				}
-			}
+			});
 		}catch (IOException e){
 			e.printStackTrace();
 		}
-	}
-}
-class AddUserThread extends Thread{
-	ClientMain main;
-	String name;
-	player player;
-	List<player> targetAdd = Collections.synchronizedList(new ArrayList<player>());
-	public AddUserThread(String name, ClientMain main) throws IOException {
-		this.name = name;
-		this.main = main;
-		//player = new player();
-	}
-	@Override
-	public void run(){
-		System.out.println("Adduser에서의 otherPlayers 길이 : " + main.otherPlayers.size());
-
-		targetAdd.addAll(main.otherPlayers);
-		//System.out.println("addall 결과 : " + targetAdd);
-		//System.out.println("targetNotAdd 값 : " + main.targetNotAdd);
-		targetAdd.remove(0);
-		//System.out.println("removeall 결과 : " + targetAdd);
-		// 1. 새로운 유저가 들어왔는데 기존 유저가 없을 경우
-		// 2. 기존 유저들이 있는 경우
-
-		// 실시간 업데이트랑 겹치는 것도 해결을 해야겠다.
-		// 작동 방식 자체를 어떻게 바꿔봐야겠어
-		/*if(main.userName.equals(name)){
-			for(player player : targetAdd){
-				if(player.getName().equals(name)){
-					main.mapP[3].add(player);
-				}
-			}
-		}
-		else{
-			player.setPlayerNickname(name);
-			main.mapP[3].add(player);
-		}*/
-		/*for(player player : targetAdd){
-			if(!player.getName().equals(main.userName)){
-				System.out.print("addplayer돌아가는 중 : " + player.getName() + " ");
-				if(main.userName.equals(name)){
-					System.out.println("새로 생성된 애 추가");
-					main.mapP[3].add(player);
-					//break;
-				}
-				else{
-					if(player.getName().equals(name)){
-						main.mapP[3].add(player);
-						break;
-					}
-				}
-				//player.setPlayerNickname(name);
-				//System.out.println("아놔 저장 되긴 허는겨? " + main.targetNotAdd.size());
-				// 플레이어 추가를 매번하는게 아니라 없을 때만 추가
-				// 집 가서 마저 해보자
-			}
-			main.repaint();
-		}*/
-		main.repaint();
 	}
 }
 class RealTimeUpdate extends Thread{
@@ -594,7 +590,7 @@ class RealTimeUpdate extends Thread{
 		//System.out.println("다른맵에선 왜 안돼 curmap : " + curMap + "receivedindex = " + receivedMapIndex);
 		for(player player : main.otherPlayers){
 			if(!player.getName().equals(curUser)){
-				System.out.println("넘겨받은 이름 : " + playersName + ", 플레이어 리스트의 이름 : "+player.getName());
+				//System.out.println("넘겨받은 이름 : " + playersName + ", 플레이어 리스트의 이름 : "+player.getName());
 				if(playersName.equals(player.getName()) && curMap == receivedMapIndex){
 					if(player.getParent() == null){
 						for(int i = 0; i<main.targetNotAdd.size(); i++){
@@ -602,32 +598,39 @@ class RealTimeUpdate extends Thread{
 								player.setLocation(x, y);
 								main.mapP[receivedMapIndex].repaint();
 								break;
-							}else if(i + 1 == main.targetNotAdd.size()){
+							}else if(i + 1 == main.targetNotAdd.size()){ // 반복문 다 돌았을 경우
 								main.mapP[receivedMapIndex].add(player);
 								main.targetNotAdd.add(player);
 								main.mapP[receivedMapIndex].repaint();
 							}
 							// 새로운 클라이언트가 실행 될 때마다 예전 애들은 적용이 안됌 뭐지
 						}
-						System.out.println("이 player의 부모는? " + player.getParent());
+						//System.out.println("이 player의 부모는? " + player.getParent());
 					}
 					// 이것도 한번만 해야할 것 같고, 근데 이거 안하면 맵 이동하고나서 안보임
 					// 뭔가 세부적인 조건을 더 해야할듯
-					System.out.println("다른 사람의 이동을 반영합니다.");
+
+					//System.out.println("다른 사람의 이동을 반영합니다.");
 					player.setLocation(x, y);
 					main.mapP[receivedMapIndex].repaint();
 				}
 				else if(playersName.equals(player.getName()) && !(curMap == receivedMapIndex)){
+					main.mapP[receivedMapIndex].remove(player);
 					main.mapP[curMap].remove(player);
+
 					main.targetNotAdd.remove(player);
+
 					main.mapP[curMap].repaint();
+					main.mapP[receivedMapIndex].repaint();
 					//main.otherPlayers.remove(player);
 					break;
 				}
 			}
-			// 여러 명일 때 왜 자꾸 그려지지? 생각해보자
 
-			// 뭔가 이상함 고쳐야 함
+			// 22.11.27 여기하면 돼
+			// 맵 이동 시 안보이는 문제 해결하자
+
+
 		}
 	}
 }
