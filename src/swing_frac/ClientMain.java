@@ -11,6 +11,12 @@ import java.util.Vector;
 import java.util.List;
 import javax.swing.*;
 
+// 22.11.27
+// 멀티 제대로 되도록 함
+// 하지만 중복 플레이어가 자꾸 쌓이는 문제가 생긴다.
+// 유저가 많아질 수록 문제는 점점 커짐
+// 작동은 제대로 되지만 연산속도를 위해 개선 필요해 보임
+
 // 22.11.24
 // 어찌저찌 반영이 되는 방법을 찾긴 했는데 어설픈 부분이 한두 곳이 아니다
 // 금욜 오전 근로때 마저 찾아보자
@@ -189,21 +195,23 @@ public class ClientMain extends JFrame{
 					int countPlayers = Integer.parseInt(in.readLine());
 					System.out.println("prenames " +countPlayers);
 					System.out.println("닉네임들");
-					System.out.print("player 네임은 : " + player.getName() + " 다른 사람들 꺼는 \n");
+					System.out.println("player 네임은 : " + player.getName());
 
-					otherPlayers.clear();
-					players.clear();
+					//otherPlayers.add(player);
+					//otherPlayers.clear();
+					//players.clear();
 					for(int i = 0; i<countPlayers; i++){
-
 						player otherPlayer = new player();
 						otherPlayer.setPlayerNickname(in.readLine());
 						otherPlayers.add(otherPlayer);
 						players.add(otherPlayer);
 						System.out.println("countPlayer 실행 중 ");
-						//System.out.print("otherPlayers에 저장된 값 : " + otherPlayers.get(i).getName()+" ");
-						//System.out.print("players에 저장된 값 : " + players.get(i).getName()+" \n");
 					}
-
+					//player otherPlayer = new player();
+					//otherPlayer.setPlayerNickname(name);
+					//otherPlayers.add(otherPlayer);
+					//players.add(otherPlayer);
+					System.out.println("추가 됐니? " + otherPlayers);
 					System.out.println();
 
 					AddUserThread addThread = new AddUserThread(name, this);
@@ -510,25 +518,46 @@ class AddUserThread extends Thread{
 	public AddUserThread(String name, ClientMain main) throws IOException {
 		this.name = name;
 		this.main = main;
-		player = new player();
+		//player = new player();
 	}
 	@Override
 	public void run(){
 		System.out.println("Adduser에서의 otherPlayers 길이 : " + main.otherPlayers.size());
 
 		targetAdd.addAll(main.otherPlayers);
-		System.out.println("addall 결과 : " + targetAdd);
-		System.out.println("targetNotAdd 값 : " + main.targetNotAdd);
+		//System.out.println("addall 결과 : " + targetAdd);
+		//System.out.println("targetNotAdd 값 : " + main.targetNotAdd);
 		targetAdd.remove(0);
-		System.out.println("removeall 결과 : " + targetAdd);
+		//System.out.println("removeall 결과 : " + targetAdd);
+		// 1. 새로운 유저가 들어왔는데 기존 유저가 없을 경우
+		// 2. 기존 유저들이 있는 경우
 
-		for(player player : targetAdd){
+		// 실시간 업데이트랑 겹치는 것도 해결을 해야겠다.
+		// 작동 방식 자체를 어떻게 바꿔봐야겠어
+		/*if(main.userName.equals(name)){
+			for(player player : targetAdd){
+				if(player.getName().equals(name)){
+					main.mapP[3].add(player);
+				}
+			}
+		}
+		else{
+			player.setPlayerNickname(name);
+			main.mapP[3].add(player);
+		}*/
+		/*for(player player : targetAdd){
 			if(!player.getName().equals(main.userName)){
 				System.out.print("addplayer돌아가는 중 : " + player.getName() + " ");
-				if(player.getName().equals(name)){
+				if(main.userName.equals(name)){
 					System.out.println("새로 생성된 애 추가");
 					main.mapP[3].add(player);
-					break;
+					//break;
+				}
+				else{
+					if(player.getName().equals(name)){
+						main.mapP[3].add(player);
+						break;
+					}
 				}
 				//player.setPlayerNickname(name);
 				//System.out.println("아놔 저장 되긴 허는겨? " + main.targetNotAdd.size());
@@ -536,7 +565,8 @@ class AddUserThread extends Thread{
 				// 집 가서 마저 해보자
 			}
 			main.repaint();
-		}
+		}*/
+		main.repaint();
 	}
 }
 class RealTimeUpdate extends Thread{
@@ -548,32 +578,53 @@ class RealTimeUpdate extends Thread{
 	public RealTimeUpdate(int x, int y, int receivedMapIndex,String curUser, String playersName, int curMap, ClientMain main){
 		this.x = x;
 		this.y = y;
-		this.receivedMapIndex = receivedMapIndex;
-		this.playersName = playersName;
+		this.receivedMapIndex = receivedMapIndex; // 정보 준 놈 위치
+		this.playersName = playersName; // 정보 준 놈
 		this.main = main;
-		this.curMap = curMap;
+		this.curMap = curMap; // 내위치
 		this.player = new player();
-		this.curUser = curUser;
+		this.curUser = curUser; // 나
 	}
 	@Override
 	public void run(){
-		System.out.println("다른맵에선 왜 안돼 curmap : " + curMap + "receivedindex = " + receivedMapIndex);
+		if(main.targetNotAdd.size() == 0){
+			player.setPlayerNickname(curUser);
+			main.targetNotAdd.add(player);
+		}
+		//System.out.println("다른맵에선 왜 안돼 curmap : " + curMap + "receivedindex = " + receivedMapIndex);
 		for(player player : main.otherPlayers){
 			if(!player.getName().equals(curUser)){
 				System.out.println("넘겨받은 이름 : " + playersName + ", 플레이어 리스트의 이름 : "+player.getName());
 				if(playersName.equals(player.getName()) && curMap == receivedMapIndex){
-					main.mapP[receivedMapIndex].add(player);
+					if(player.getParent() == null){
+						for(int i = 0; i<main.targetNotAdd.size(); i++){
+							if(main.targetNotAdd.get(i).getName().equals(player.getName())){
+								player.setLocation(x, y);
+								main.mapP[receivedMapIndex].repaint();
+								break;
+							}else if(i + 1 == main.targetNotAdd.size()){
+								main.mapP[receivedMapIndex].add(player);
+								main.targetNotAdd.add(player);
+								main.mapP[receivedMapIndex].repaint();
+							}
+							// 새로운 클라이언트가 실행 될 때마다 예전 애들은 적용이 안됌 뭐지
+						}
+						System.out.println("이 player의 부모는? " + player.getParent());
+					}
+					// 이것도 한번만 해야할 것 같고, 근데 이거 안하면 맵 이동하고나서 안보임
+					// 뭔가 세부적인 조건을 더 해야할듯
+					System.out.println("다른 사람의 이동을 반영합니다.");
 					player.setLocation(x, y);
-					break;
+					main.mapP[receivedMapIndex].repaint();
 				}
 				else if(playersName.equals(player.getName()) && !(curMap == receivedMapIndex)){
 					main.mapP[curMap].remove(player);
+					main.targetNotAdd.remove(player);
+					main.mapP[curMap].repaint();
 					//main.otherPlayers.remove(player);
 					break;
 				}
 			}
-			main.mapP[receivedMapIndex].repaint();
-			main.mapP[curMap].repaint();
 			// 여러 명일 때 왜 자꾸 그려지지? 생각해보자
 
 			// 뭔가 이상함 고쳐야 함

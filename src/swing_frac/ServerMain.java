@@ -396,11 +396,12 @@ class connectServer extends Thread{
 
             System.out.print("players : ");
             sendAll(Integer.toString(players.size()));
+            //sendAll(name);
             for(player player : players){
                 System.out.print(player.getName() + " ");
                 sendAll(player.getName());
                 //players.remove(player); // 방금여기바꿈
-            }
+           }
 
             final String finalName = name; // 익명클래스는 자신을 감싸는 블록안의 지역변수를 사용할 수 없음
             // 그래서 final로 상수화 하던지 전역변수로 만들어야함
