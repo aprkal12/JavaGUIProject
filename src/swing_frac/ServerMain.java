@@ -360,7 +360,6 @@ class connectServer extends Thread{
     static Vector<player> players = new Vector<player>();
     Vector<String> playersName = new Vector<String>();
     ServerMain main;
-    int curMap;
 
     public connectServer(){}
     public connectServer(Socket socket, int curMap, ServerMain main){
@@ -378,15 +377,13 @@ class connectServer extends Thread{
     @Override
     public void run(){
         String name = "";
-        //player player2 = new player();
         try{
-            name = in.readLine(); // 나중에 캐릭터 닉네임으로 변경해야함
+            name = in.readLine(); // 클라이언트로부터 전달 받은 이름
             System.out.println("["+name+" 새연결 생성]");
             sendAll("["+name+"]님이 들어오셨습니다.");
 
             sendAll(name); // 닉네임만 따로 한 번 더 보내줌
 
-            //playersName.add(name);
             // 플레이어 접속할 때마다 맵에 캐릭터 추가
             // 같은 맵에 있을 때만 그리기
             // 생성될 땐 3번 맵
@@ -396,11 +393,9 @@ class connectServer extends Thread{
 
             System.out.print("players : ");
             sendAll(Integer.toString(players.size()));
-            //sendAll(name);
             for(player player : players){
                 System.out.print(player.getName() + " ");
                 sendAll(player.getName());
-                //players.remove(player); // 방금여기바꿈
            }
 
             final String finalName = name; // 익명클래스는 자신을 감싸는 블록안의 지역변수를 사용할 수 없음
@@ -419,8 +414,6 @@ class connectServer extends Thread{
                     }
                 }
             }).start();
-            //System.out.println("in은 뭔가 " + in);
-            //System.out.println("in.readline 타입비교 가능 하려나? " + in.readLine());
             while(in != null){
                 // 생각한 방식 클라이언트에서 캐릭터이동 후 좌표를 보내주면
                 // 문자만 있는지 숫자만 있는지 판단함

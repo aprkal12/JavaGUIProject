@@ -6,8 +6,8 @@ import javax.swing.*;
 
 public class player extends JPanel{
 	private JLabel nickname;
-	Image img = new ImageIcon(Objects.requireNonNull(player.class.getResource("../images/mychar.png"))).getImage();
-	//Image img = new ImageIcon(player.class.getResource("../images/mychar.png")).getImage();
+	String img_src = "../images/캐릭터" + (int)(Math.random() * 5 + 1) +".png";
+	Image img = new ImageIcon(Objects.requireNonNull(player.class.getResource(img_src))).getImage();
 	public player(){
 		nickname = new JLabel();
 		nickname.setFont(new Font("Consolas 굵게", Font.BOLD, 15));
@@ -19,7 +19,6 @@ public class player extends JPanel{
 		setLayout(null);
 		setVisible(true);
 		add(nickname);
-		//setFocusable(true); // 키 이벤트를 이 패널에 적용함
 	}
 	public void setPlayerNickname(String nickname){
 		this.nickname.setText(nickname);

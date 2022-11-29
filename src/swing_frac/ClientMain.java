@@ -57,6 +57,15 @@ import javax.swing.*;
 // 클래스도 분리해서 정리하자
 
 // 캐릭터 객체 => 하나의 패널로 해서 이미지 씌워야할듯
+// 22.11.11
+// 맵별 라벨, 폰트 따로 모듈화 필요해보임
+
+// 22.11.13
+// 라벨 이름 설정하는거 따로 함수 필요해보임
+
+// 22.11.14
+// 그냥 맵 클래스에 라벨을 자체적으로 포함시킴
+// 라벨 함수는 컴포넌트세팅쪽으로 넘겨야겠음
 
 // 22.11.14 update
 // 기본 라벨에 관한 세팅은 다시 objectsettings로 넘김
@@ -102,15 +111,16 @@ public class ClientMain extends JFrame{
 	private entryScreen setNicknameP;
 	private JTextField tField;
 	private StringBuffer longString;
+	public ChatPanel chatPanel;
 	public String userName;
-	private Thread th1;
-	private Thread th2;
+	private Thread entryThread;
 	static int curMap = 3;
 	static Vector<String> playersName = new Vector<String>();
 	static Vector<player> players = new Vector<player>();
 	connectServer connectServer = new connectServer();
 	static List<player> otherPlayers = Collections.synchronizedList(new ArrayList<player>());
 	static List<player> targetNotAdd = Collections.synchronizedList(new ArrayList<player>());
+	public InformationPanel ip;
 
 	// 부드러운 캐릭터 이동을 위한 변수선언
 	public ClientMain() throws IOException {
@@ -127,6 +137,7 @@ public class ClientMain extends JFrame{
 		setNicknameP = new entryScreen();
 		tField = setNicknameP.getTextField();
 		userName = setNicknameP.getNickname();
+		chatPanel = new ChatPanel();
 
 		longString = new StringBuffer();
 
@@ -137,14 +148,14 @@ public class ClientMain extends JFrame{
 		entryEventSet();
 
 		// 실행 제어
-		entryThread runna = new entryThread();
-		th1 = new Thread(runna);
-		th1.start();
+		entryRunnable runna = new entryRunnable();
+		entryThread = new Thread(runna);
+		entryThread.start();
 		try{
-			th1.join();
+			entryThread.join();
 		}catch(InterruptedException e){
-			System.out.println("조인 끝");
-			// 아마 닉네임을 입력 받은 후인 여기서 서버 실행 시켜야 겠지?
+			System.out.println("Thread 조인 오류");
+			// 아마 닉네임을 입력 받은 후에 서버 실행 시켜야겠지?
 		}
 		// 닉네임 입력 후 화면 제거
 		entryP.setVisible(false);
@@ -152,47 +163,10 @@ public class ClientMain extends JFrame{
 
 		// 맵 패널로 변경, 채팅창 추가
 		setSize(1100, 600);
-		JPanel chat = new JPanel();
-		chat.setBounds(800, 0, 300,600);
-		chat.setLayout(null);
-		//chat.setBackground(Color.BLACK);
-		setVisible(true);
-
-
-		JTextField textField = new JTextField(30);
-		JTextArea textArea = new JTextArea(30, 30);
-		JScrollPane scrollPane = new JScrollPane(textArea, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-
-		textField.setBounds(10, 510, 260, 40);
-		textArea.setBounds(10, 10, 260, 480);
-		scrollPane.setBounds(10, 10, 260, 480);
-
-
-		textArea.append("@@ SOFTWARE IN METAVERSE @@\n");
-		textArea.setEditable(false);
-		textArea.setFont(new Font("Consolas 굵게", Font.BOLD, 13));
-		textField.setFont(new Font("Consolas 굵게", Font.BOLD, 13));
-
-		textArea.setVisible(true);
-		textField.setVisible(true);
-		//chat.add(textArea);
-		chat.add(scrollPane);
-		chat.add(textField);
-
-		//textField.addActionListener(new ActionListener() {
-		//	@Override
-		//	public void actionPerformed(ActionEvent e) {
-
-		//	}
-		//});
-
-		cPane.add(chat);
-
+		cPane.add(chatPanel);
 		cPane.add(mapP[3]);
 		player.setPlayerNickname(userName);
-
 		repaint();
-		//player.add(userLabel);
 
 		try{
 			socket = new Socket("localhost", 7999);
@@ -205,39 +179,26 @@ public class ClientMain extends JFrame{
 			// 현재 같은 맵에 있는 유저끼리만 그려야함
 
 			// 클라이언트가 서버로 채팅메세지 보내는 스레드
-			userThread userThread = new userThread(socket, userName, textField);
+			UserThread userThread = new UserThread(socket, userName, chatPanel.textField);
 			userThread.start();
 
 			while(in != null){
 				String inputMsg = in.readLine();
-				//System.out.println("서버에서 보내준 정보 타입은? " + inputMsg.getClass().getSimpleName());
 				if(inputMsg.contains("들어오셨습니다.")){
-					textArea.append(inputMsg+"\n");
-					//System.out.println("입장 체크는 어캐하노");
+					chatPanel.textArea.append(inputMsg+"\n");
 					String name = in.readLine();
-
-					// 뭔가 문제가 있어
-					// 해당 클라이언트 생성 전에 이미 있던 닉네임을 가져오는 법 찾아야함
 					// 만들어야 하는 태스크
 					// 1. 처음 접속 시, 본인 제외 플레이어 리스트에 있는 캐릭터 그리기
 					// 2. 움직이면 서버로 정보를 보내고, 서버는 모든 클라이언트에게 뿌려줌
 					// 3. 뿌려준 정보를 받아서 자기 자신의 정보면 무시, 다른 클라이언트의 정보면 반영
-
 					System.out.println("새로 받아온 이름 " +name);
 					int countPlayers = Integer.parseInt(in.readLine());
 					System.out.println("prenames " +countPlayers);
 					System.out.println("닉네임들");
 					System.out.println("player 네임은 : " + player.getName());
-
-					//otherPlayers.add(player);
-
-					//otherPlayers.clear();
-					//players.clear();
-
 					// 유닛 중복때매 위 처럼 클리어 하고 다시 추가 하고 싶었는데
 					// 그러면 추가된 애들이 다른 객체가 되어버려서
 					// 예전 플레이어들의 실시간 위치 업데이트가 적용되지않음
-
 					for(int i = 0; i<countPlayers; i++){
 						boolean canIAddPlayers = true;
 						String names = in.readLine();
@@ -262,8 +223,6 @@ public class ClientMain extends JFrame{
 						break;
 					}
 					else if(inputMsg.contains("나가셨습니다.")){
-						//textArea.append(inputMsg + "\n");
-						System.out.println("웨 안됌?");
 						String outPlayer = in.readLine();
 						int outPlayerIndex = 0;
 						for(int i = 0; i<otherPlayers.size(); i++){
@@ -275,19 +234,15 @@ public class ClientMain extends JFrame{
 						otherPlayers.remove(outPlayerIndex);
 						mapP[curMap].repaint();
 					}
-					//Thread.sleep(1000);
-					//if(textArea.getLineCount()>23){
-					//	textArea.removeAll();
-					//	textArea.repaint();
-					//}
 					if(inputMsg.length()>30){ // 너무 길어서 채팅창에 글자 짤리는거 방지
 						longString.delete(0, longString.length());
 						longString.append(inputMsg);
 						longString.insert(30, "\n");
 						inputMsg = String.valueOf(longString);
 					}
-					textArea.append(inputMsg + "\n");
-					textArea.setCaretPosition(textArea.getDocument().getLength());
+					chatPanel.textArea.append(inputMsg + "\n");
+					chatPanel.textArea.setCaretPosition(chatPanel.textArea.getDocument().getLength());
+					// textArea 범위를 넘어서는 append가 오면 자동으로 스크롤을 맨 아래로 내림
 					System.out.println("From : " + inputMsg);
 				}
 				else{
@@ -296,18 +251,15 @@ public class ClientMain extends JFrame{
 					int indexOfMap = Integer.parseInt(in.readLine());
 					String playerName = in.readLine();
 					// 이 정보들로 유저들 위치 새로 그리자
-					// 그 전에 플에이어들 부터 각 클라이언트에도 추가해야함
-					// 이제 여기 만들자
-					System.out.println(playerName + "에서 정보가 왔는데 지금 나는? " + userName);
-					//if(!playerName.equals(userName)){
+
 					RealTimeUpdate realTimeUpdate = new RealTimeUpdate(moveX, moveY, indexOfMap, userName, playerName, curMap, this);
 					realTimeUpdate.start();
-					//}
+
 					System.out.println(playerName + "에서 보낸 좌표 정보를 받았음");
 				}
 			}
 		}catch (IOException i){
-			textArea.append("서버와 접속이 끊어졌습니다.\n");
+			chatPanel.textArea.append("서버와 접속이 끊어졌습니다.\n");
 			System.out.println("서버와 접속이 끊어졌습니다.");
 		} finally {
 			try{
@@ -316,7 +268,7 @@ public class ClientMain extends JFrame{
 				j.printStackTrace();
 			}
 		}
-		textArea.append("서버 연결종료\n");
+		chatPanel.textArea.append("서버 연결종료\n");
 		System.out.println("서버 연결종료");
 	}
 	public void setFrame() {
@@ -337,43 +289,21 @@ public class ClientMain extends JFrame{
 		entryP.add(setNicknameP);
 		cPane.add(entryP);
 		repaint();
-		System.out.println("초기 유저네임 : " + userName);
-		//cPane.add(mapP[3]);
 
+		//cPane.add(mapP[3]);
 		mapP[3].add(player);
-		// 오브젝트 추가 테스트
-		//mapP[3].add(t3);
-		//tField);
-		//mapP[3].add(t2);
 
 		//mapP[0].setLabeltext("102, 101 복도");
 		//mapP[1].setLabeltext("디정 후문");
-		//m/apP[2].setLabeltext("연구실들");
+		//mapP[2].setLabeltext("연구실들");
 		//mapP[3].setLabeltext("디정 중앙");
 		//mapP[4].setLabeltext("디셈 복도");
 		//mapP[5].setLabeltext("디정 정문");
 		//mapP[6].setLabeltext("116 복도");
-
-		// 22.11.11
-		// 맵별 라벨, 폰트 따로 모듈화 필요해보임
-
-		// 22.11.13
-		// 라벨 이름 설정하는거 따로 함수 필요해보임
-
-		// 22.11.14
-		// 그냥 맵 클래스에 라벨을 자체적으로 포함시킴
-		// 라벨 함수는 컴포넌트세팅쪽으로 넘겨야겠음
-
-		//mapP[3].setBackground(Color.BLUE);
-		mapP[1].setBackground(Color.WHITE);
-		mapP[2].setBackground(Color.GREEN);
-		mapP[0].setBackground(Color.YELLOW);
-		mapP[4].setBackground(Color.ORANGE);
 		
 		mapP[3].setVisible(true);
 	}
 	public void moveLeftOrRightMap(int target){
-
 		mapP[curMap].setVisible(false); // 이동 전 맵 안보이게
 		cPane.remove(mapP[curMap]); // 이동 전 맵 삭제
 		curMap = target;
@@ -423,7 +353,7 @@ public class ClientMain extends JFrame{
 						if (curMap == 1) {
 							if(player.getX() >= 270 && player.getX() <= 320 && player.getY() >= 180 && player.getY() <= 220){
 								try {
-									InformationPanel ip = new InformationPanel("102 강의실 : 강의중 컴퓨터를 사용해 실습할수 있는 강의실이다.", "../images/116.jpg");
+									ip = new InformationPanel("102 강의실 : 강의중 컴퓨터를 사용해 실습할수 있는 강의실이다.", "../images/116.jpg");
 									mapP[curMap].add(ip);
 									ip.setVisible(true);
 									mapP[curMap].repaint();
@@ -434,7 +364,7 @@ public class ClientMain extends JFrame{
 						} else if (curMap == 0) {
 							if(player.getX() >= 390 && player.getX() <= 440 && player.getY() >= 180 && player.getY() <= 260){
 								try {
-									InformationPanel ip = new InformationPanel("101 강의실 : 강의중 컴퓨터를 사용해 실습할수 있는 강의실이다.", "../images/116.jpg");
+									ip = new InformationPanel("101 강의실 : 강의중 컴퓨터를 사용해 실습할수 있는 강의실이다.", "../images/116.jpg");
 									mapP[curMap].add(ip);
 									ip.setVisible(true);
 									mapP[curMap].repaint();
@@ -446,7 +376,7 @@ public class ClientMain extends JFrame{
 						} else if (curMap == 2) {
 							if(player.getX() >= 410 && player.getX() <= 470 && player.getY() >= 50 && player.getY() <= 140){
 								try {
-									InformationPanel ip = new InformationPanel("게시판 : 학과의 중요한 정보를 얻을 수 있다.", "../images/게시판.jpg");
+									ip = new InformationPanel("게시판 : 학과의 중요한 정보를 얻을 수 있다.", "../images/게시판.jpg");
 									mapP[curMap].add(ip);
 									ip.setVisible(true);
 									mapP[curMap].repaint();
@@ -457,7 +387,7 @@ public class ClientMain extends JFrame{
 						} else if (curMap == 6) {
 							if(player.getX() >= 510 && player.getX() <= 560 && player.getY() >= 0 && player.getY() <= 60){
 								try {
-									InformationPanel ip = new InformationPanel("116 강의실 : 강의중 컴퓨터를 사용해 실습할수 있는 강의실이다.", "../images/116.jpg");
+									ip = new InformationPanel("116 강의실 : 강의중 컴퓨터를 사용해 실습할수 있는 강의실이다.", "../images/116.jpg");
 									mapP[curMap].add(ip);
 									ip.setVisible(true);
 									mapP[curMap].repaint();
@@ -553,26 +483,21 @@ public class ClientMain extends JFrame{
 	}
 	public void entryEventSet() {
 		tField.addKeyListener(new KeyAdapter(){
-			// 22.11.18 여기서 만들어서 쓰레드 돌려보자 여기서 리스너 둘 다 만들고
-			// 쓰레드 끝나면 포커스를 넘기는 식으로 하면 될듯요~
+			// 쓰레드 끝나면 포커스를 넘기는 식으로 하면 될듯하다.
 			// 잘 된다 나이스
-			// 클래스 정리좀 하자 ㅋㅋㅋㅋㅋ
 			@Override
 			public void keyPressed(KeyEvent e) {
 				if(e.getKeyCode() == KeyEvent.VK_ENTER) {
-					//th1.interrupt();
 					userName = tField.getText();
 					System.out.println(userName);
-					th1.interrupt();
-					//JOptionPane.showMessageDialog(null, userName);
+					entryThread.interrupt(); // entryThread 종료
 				}
 			}
 		});
-
 	}
-	class entryThread implements Runnable{
+	class entryRunnable implements Runnable{
 		private JLabel userLabel;
-		public entryThread(){
+		public entryRunnable(){
 			objectSettings objSet = new objectSettings();
 			userLabel = objSet.getLabel();
 		}
@@ -583,7 +508,7 @@ public class ClientMain extends JFrame{
 					System.out.println("userName = " + userName);
 					userLabel.setText(userName);
 				}catch(InterruptedException e){
-					System.out.println("thread1 끝");
+					System.out.println("entryThread 끝");
 					return;
 				}
 			}
@@ -593,18 +518,16 @@ public class ClientMain extends JFrame{
 		new ClientMain();
 	}
 }
-class userThread extends Thread{
+class UserThread extends Thread{
 	Socket socket = null;
 	String name;
 	Scanner scanner = new Scanner(System.in);
 	JTextField textField = new JTextField();
 	String outputMsg;
-
-	public userThread(Socket socket, String name, JTextField textField){
+	public UserThread(Socket socket, String name, JTextField textField){
 		this.socket = socket;
 		this.name = name;
 		this.textField = textField;
-
 	}
 	@Override
 	public void run(){
@@ -612,7 +535,6 @@ class userThread extends Thread{
 			PrintStream out = new PrintStream(socket.getOutputStream());
 			out.println(name);
 			out.flush();
-				//String outputMsg = scanner.nextLine();
 			textField.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
@@ -651,34 +573,30 @@ class RealTimeUpdate extends Thread{
 			player.setPlayerNickname(curUser);
 			main.targetNotAdd.add(player);
 		}
-		//System.out.println("다른맵에선 왜 안돼 curmap : " + curMap + "receivedindex = " + receivedMapIndex);
-		for(player player : main.otherPlayers){
-			if(!player.getName().equals(curUser)){
+		for(player player : main.otherPlayers){ // 모든 플레이어의 리스트에서 하나씩 가져온다.
+			if(!player.getName().equals(curUser)){ // 플레이어가 이 클라이언트의 유저가 아니라면
 				//System.out.println("넘겨받은 이름 : " + playersName + ", 플레이어 리스트의 이름 : "+player.getName());
-				if(playersName.equals(player.getName()) && curMap == receivedMapIndex){
-					if(player.getParent() == null){
-						for(int i = 0; i<main.targetNotAdd.size(); i++){
-							if(main.targetNotAdd.get(i).getName().equals(player.getName())){
+				if(playersName.equals(player.getName()) && curMap == receivedMapIndex){ // 플레이어 리스트에 있는 플레이어 중 하나가
+					// 정보를 보내준 당사자이면서, 현재 클라이언트와 같은 맵에 있는 경우
+					if(player.getParent() == null){ // 그 플레이어가 맵에 추가된 적이 없는 경우
+						for(int i = 0; i<main.targetNotAdd.size(); i++){ // 이미 추가 된 적 있는 플레이어의 수 만큼 반복
+							if(main.targetNotAdd.get(i).getName().equals(player.getName())){ // 이미 있던 플레이어가 위치 정보를 전달 했을 때
 								player.setLocation(x, y);
 								main.mapP[receivedMapIndex].repaint();
 								break;
 							}else if(i + 1 == main.targetNotAdd.size()){ // 반복문 다 돌았을 경우
+								// => 정보 보내 준 플레이어가 그 맵에 이미 있던 플레이어가 아닌 경우
 								main.mapP[receivedMapIndex].add(player);
 								main.targetNotAdd.add(player);
 								main.mapP[receivedMapIndex].repaint();
 							}
-							// 새로운 클라이언트가 실행 될 때마다 예전 애들은 적용이 안됌 뭐지
 						}
 						//System.out.println("이 player의 부모는? " + player.getParent());
 					}
-					// 이것도 한번만 해야할 것 같고, 근데 이거 안하면 맵 이동하고나서 안보임
-					// 뭔가 세부적인 조건을 더 해야할듯
-
-					//System.out.println("다른 사람의 이동을 반영합니다.");
 					player.setLocation(x, y);
 					main.mapP[receivedMapIndex].repaint();
-				}
-				else if(playersName.equals(player.getName()) && !(curMap == receivedMapIndex)){
+				} else if(playersName.equals(player.getName()) && !(curMap == receivedMapIndex)){
+					// => 정보를 전달해준 플레이어가 현재 클라이언트랑 다른 맵으로 이동한 경우
 					main.mapP[receivedMapIndex].remove(player);
 					main.mapP[curMap].remove(player);
 
@@ -690,11 +608,6 @@ class RealTimeUpdate extends Thread{
 					break;
 				}
 			}
-
-			// 22.11.27 여기하면 돼
-			// 맵 이동 시 안보이는 문제 해결하자
-
-
 		}
 	}
 }

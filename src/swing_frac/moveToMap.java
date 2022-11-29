@@ -1,5 +1,4 @@
 package swing_frac;
-
 public class moveToMap {
     private int curMap;
     private int target;
