@@ -353,7 +353,7 @@ public class ClientMain extends JFrame{
 						if (curMap == 1) {
 							if(player.getX() >= 270 && player.getX() <= 320 && player.getY() >= 180 && player.getY() <= 220){
 								try {
-									ip = new InformationPanel("102 강의실 : 강의중 컴퓨터를 사용해 실습할수 있는 강의실이다.", "../images/116.jpg");
+									ip = new InformationPanel("102 강의실 : 강의중 컴퓨터를 사용해 실습할수 있는 강의실이다.", "../images/102.jpg");
 									mapP[curMap].add(ip);
 									ip.setVisible(true);
 									mapP[curMap].repaint();
@@ -364,7 +364,7 @@ public class ClientMain extends JFrame{
 						} else if (curMap == 0) {
 							if(player.getX() >= 390 && player.getX() <= 440 && player.getY() >= 180 && player.getY() <= 260){
 								try {
-									ip = new InformationPanel("101 강의실 : 강의중 컴퓨터를 사용해 실습할수 있는 강의실이다.", "../images/116.jpg");
+									ip = new InformationPanel("101 강의실 : 강의중 컴퓨터를 사용해 실습할수 있는 강의실이다.", "../images/101.jpg");
 									mapP[curMap].add(ip);
 									ip.setVisible(true);
 									mapP[curMap].repaint();
@@ -387,7 +387,7 @@ public class ClientMain extends JFrame{
 						} else if (curMap == 6) {
 							if(player.getX() >= 510 && player.getX() <= 560 && player.getY() >= 0 && player.getY() <= 60){
 								try {
-									ip = new InformationPanel("116 강의실 : 강의중 컴퓨터를 사용해 실습할수 있는 강의실이다.", "../images/116.jpg");
+									ip = new InformationPanel("116 강의실 : 이론과목을 배울 수 있는 강의실이다.", "../images/116.jpg");
 									mapP[curMap].add(ip);
 									ip.setVisible(true);
 									mapP[curMap].repaint();
